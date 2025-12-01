@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Static JSON Dialogue TTS Reader</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .controls,
+      .dialogue-controls {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .dialogue-line {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px dashed #eee;
+        cursor: pointer;
+      }
+      .dialogue-line:hover {
+        background-color: #f0f0f0;
+      }
+      .speaker {
+        font-weight: bold;
+        margin-right: 10px;
+        color: #0056b3;
+      }
+      .current-speaking {
+        background-color: #e6f7ff;
+        border-left: 5px solid #007bff;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="range"] {
+        width: 300px;
+      }
+      button {
+        padding: 10px 15px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #log {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.9em;
+      }
+      .loading-info {
+        padding: 15px;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🗣️ Static JSON Dialogue TTS Reader</h1>
+
+    <div class="controls">
+      <div class="loading-info">
+        ℹ️ **Status:** Attempting to load dialogue from
+        **`static-data.json`**...
+      </div>
+    </div>
+
+    <div class="dialogue-controls">
+      <h2>Reader Settings</h2>
+      <label for="rateSlider"
+        >Speech Rate: <span id="rateValue">1.0</span></label
+      >
+      <input
+        type="range"
+        id="rateSlider"
+        min="0.5"
+        max="2.0"
+        value="1.0"
+        step="0.1"
+      />
+
+      <p>
+        <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
+        <button id="stopBtn" disabled>⏹️ Stop Reading</button>
+      </p>
+      <p>Click any line below to read it individually.</p>
+    </div>
+
+    <h2>📜 Dialogue Content</h2>
+    <div id="dialogueContainer">
+      <p>Loading dialogue content...</p>
+    </div>
+
+    <div id="log"><strong>Message Log:</strong><br /></div>
+
+    <script>
+      const synth = window.speechSynthesis;
+      const dialogueContainer = document.getElementById("dialogueContainer");
+      const rateSlider = document.getElementById("rateSlider");
+      const rateValueSpan = document.getElementById("rateValue");
+      const readAllBtn = document.getElementById("readAllBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const logDiv = document.getElementById("log");
+
+      const STATIC_DATA_FILE = "static-data.json"; // Define the static file path
+
+      let dialogueData = null;
+      let voices = [];
+      let currentUtterance = null;
+      let dialogueIndex = 0;
+
+      // --- Voice Initialization ---
+      function populateVoices() {
+        voices = synth.getVoices();
+        logMessage(`Found ${voices.length} system voices.`);
+      }
+
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoices;
+      } else {
+        populateVoices();
+      }
+
+      // --- Utility Functions ---
+      function logMessage(message, isError = false) {
+        const time = new Date().toLocaleTimeString("en-US");
+        const color = isError ? "red" : "green";
+        logDiv.innerHTML =
+          `<span style="color:${color};">[${time}] ${message}</span><br>` +
+          logDiv.innerHTML;
+        logDiv.scrollTop = 0;
+      }
+
+      function getVoice(lang, speakerName) {
+        // 1. Try to match by language AND speaker name hint
+        let voiceMatch = voices.find(
+          (v) =>
+            v.lang.startsWith(lang) &&
+            v.name.toLowerCase().includes(speakerName.toLowerCase())
+        );
+
+        // 2. Fallback: Match by language only
+        if (!voiceMatch) {
+          voiceMatch = voices.find((v) => v.lang.startsWith(lang));
+        }
+        return voiceMatch;
+      }
+
+      // --- Core TTS Function ---
+      function speak(
+        text,
+        lang,
+        speakerName,
+        lineElement,
+        isAllMode = false,
+        callback = () => {}
+      ) {
+        // Stop current speech if not in continuous mode
+        if (!isAllMode && synth.speaking) {
+          synth.cancel();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = parseFloat(rateSlider.value);
+
+        const voiceMatch = getVoice(lang, speakerName);
+
+        if (voiceMatch) {
+          utterance.voice = voiceMatch;
+          logMessage(
+            `Using voice: ${voiceMatch.name} (${voiceMatch.lang}) for ${speakerName}`
+          );
+        } else {
+          utterance.lang = lang;
+          logMessage(
+            `No specific voice found. Using default voice for language: ${lang}`
+          );
+        }
+
+        currentUtterance = utterance;
+
+        // Highlight the speaking line
+        document
+          .querySelectorAll(".current-speaking")
+          .forEach((el) => el.classList.remove("current-speaking"));
+        if (lineElement) {
+          lineElement.classList.add("current-speaking");
+          lineElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        stopBtn.disabled = false;
+
+        utterance.onend = () => {
+          logMessage(`Speech ended: ${text.substring(0, 30)}...`);
+          // Clear highlight only if not transitioning immediately in readAll mode
+          if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
+            document
+              .querySelectorAll(".current-speaking")
+              .forEach((el) => el.classList.remove("current-speaking"));
+            stopBtn.disabled = true;
+            readAllBtn.disabled = !dialogueData || false;
+          }
+          currentUtterance = null;
+          callback();
+        };
+
+        utterance.onerror = (event) => {
+          logMessage(`TTS Error for ${speakerName}: ${event.error}`, true);
+          currentUtterance = null;
+          callback();
+        };
+
+        synth.speak(utterance);
+      }
+
+      // --- Single Line Reading ---
+      function handleLineClick(event) {
+        const lineElement = event.currentTarget;
+        const index = parseInt(lineElement.dataset.index);
+        const line = dialogueData.dialogue[index];
+
+        // Stop continuous reading
+        if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
+          synth.cancel();
+        }
+
+        speak(
+          line.text,
+          dialogueData.language_code,
+          line.speaker,
+          lineElement,
+          false
+        );
+      }
+
+      // --- Read All Dialogue ---
+      function readAllDialogue() {
+        if (!dialogueData) return;
+
+        synth.cancel(); // Stop any previous speech
+        dialogueIndex = 0;
+        readAllBtn.disabled = true;
+        logMessage("Starting continuous reading...");
+        readNextLine();
+      }
+
+      function readNextLine() {
+        if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
+          logMessage("All dialogue lines finished.");
+          stopBtn.disabled = true;
+          readAllBtn.disabled = false;
+          document
+            .querySelectorAll(".current-speaking")
+            .forEach((el) => el.classList.remove("current-speaking"));
+          return;
+        }
+
+        const line = dialogueData.dialogue[dialogueIndex];
+        const lineElement = document.querySelector(
+          `.dialogue-line[data-index="${dialogueIndex}"]`
+        );
+
+        speak(
+          line.text,
+          dialogueData.language_code,
+          line.speaker,
+          lineElement,
+          true,
+          () => {
+            // This callback runs after onend or onerror
+            dialogueIndex++;
+            readNextLine();
+          }
+        );
+      }
+
+      // --- Stop Function ---
+      function stopReading() {
+        synth.cancel();
+        document
+          .querySelectorAll(".current-speaking")
+          .forEach((el) => el.classList.remove("current-speaking"));
+        stopBtn.disabled = true;
+        readAllBtn.disabled = !dialogueData || false;
+        logMessage("Reading stopped by user.");
+      }
+
+      // --- Rendering Dialogue ---
+      function renderDialogue(data) {
+        dialogueContainer.innerHTML = ""; // Clear existing content
+
+        const langH3 = document.createElement("h3");
+        langH3.textContent = `Language Code: ${data.language_code}`;
+        dialogueContainer.appendChild(langH3);
+
+        data.dialogue.forEach((line, index) => {
+          const lineDiv = document.createElement("div");
+          lineDiv.className = "dialogue-line";
+          lineDiv.dataset.index = index;
+          lineDiv.innerHTML = `<span class="speaker">${line.speaker}:</span><span>${line.text}</span>`;
+          lineDiv.addEventListener("click", handleLineClick);
+          dialogueContainer.appendChild(lineDiv);
+        });
+        logMessage("Dialogue content displayed.");
+      }
+
+      // --- Static Data Loading ---
+      async function loadStaticData() {
+        try {
+          const response = await fetch(STATIC_DATA_FILE);
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+
+          // Basic validation
+          if (!data.language_code || !Array.isArray(data.dialogue)) {
+            throw new Error(
+              'Invalid JSON format: Missing "language_code" or "dialogue" array.'
+            );
+          }
+
+          dialogueData = data;
+          renderDialogue(dialogueData);
+          readAllBtn.disabled = false;
+          logMessage(`${STATIC_DATA_FILE} loaded successfully.`);
+        } catch (err) {
+          dialogueContainer.innerHTML = `<p style="color: red;">Error loading static data from <strong>${STATIC_DATA_FILE}</strong>. Please ensure the file exists in the same directory and follows the required schema. (Error: ${err.message})</p>`;
+          readAllBtn.disabled = true;
+          logMessage(`Data Loading Error: ${err.message}`, true);
+        }
+      }
+
+      // --- Event Listeners ---
+      rateSlider.addEventListener("input", () => {
+        rateValueSpan.textContent = rateSlider.value;
+        // Update rate instantly if speaking
+        if (currentUtterance && !synth.paused) {
+          currentUtterance.rate = parseFloat(rateSlider.value);
+        }
+      });
+
+      readAllBtn.addEventListener("click", readAllDialogue);
+      stopBtn.addEventListener("click", stopReading);
+
+      // Ensure initial state and load data on DOMContentLoaded
+      document.addEventListener("DOMContentLoaded", () => {
+        readAllBtn.disabled = true;
+        stopBtn.disabled = true;
+        loadStaticData(); // Start loading the static file immediately
+      });
+    </script>
+  </body>
+</html>
