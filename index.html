@@ -1,50 +1,72 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON 對話 TTS 閱讀器</title>
+    <title>JSON Dialogue TTS Reader</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        .controls, .dialogue-controls { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .controls, .dialogue-controls, .how-to-use { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         .dialogue-line { margin-bottom: 10px; padding: 10px; border-bottom: 1px dashed #eee; cursor: pointer; }
         .dialogue-line:hover { background-color: #f0f0f0; }
-        .speaker { font-weight: bold; margin-right: 10px; }
+        .speaker { font-weight: bold; margin-right: 10px; color: #0056b3; }
         .current-speaking { background-color: #e6f7ff; border-left: 5px solid #007bff; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input[type="range"] { width: 300px; }
         button { padding: 10px 15px; margin-right: 10px; cursor: pointer; }
-        #log { margin-top: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
+        #log { margin-top: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; font-size: 0.9em; }
+        .how-to-use { background-color: #e6f7ff; border-color: #b3d9ff; }
+        .how-to-use ol li { margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>🗣️ JSON 對話 TTS 閱讀器</h1>
+    <h1>🗣️ JSON Dialogue TTS Reader</h1>
 
     <div class="controls">
-        <label for="fileInput">選擇 JSON 對話檔案:</label>
+        <label for="fileInput">Upload JSON Dialogue File:</label>
         <input type="file" id="fileInput" accept="application/json">
-        <p>請選擇符合以下 **Swagger 結構** 的 JSON 檔案。</p>
     </div>
 
     <div class="dialogue-controls">
-        <label for="rateSlider">語速 (Rate): <span id="rateValue">1.0</span></label>
+        <h2>Reader Settings</h2>
+        <label for="rateSlider">Speech Rate: <span id="rateValue">1.0</span></label>
         <input type="range" id="rateSlider" min="0.5" max="2.0" value="1.0" step="0.1">
         
         <p>
-            <button id="readAllBtn" disabled>▶️ 一次過閱讀所有對話</button>
-            <button id="stopBtn" disabled>⏹️ 停止閱讀</button>
+            <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
+            <button id="stopBtn" disabled>⏹️ Stop Reading</button>
         </p>
-        <p>點擊下方任一句對話，可單獨閱讀該句。</p>
+        <p>Click any line below to read it individually.</p>
     </div>
 
-    <h2>📜 對話內容</h2>
+    <h2>📜 Dialogue Content</h2>
     <div id="dialogueContainer">
-        <p>請先上傳 JSON 檔案。</p>
+        
+        <div class="how-to-use">
+            <h3>How to Use This Reader</h3>
+            <ol>
+                <li>
+                    <strong>Generate Dialogue:</strong> Use an AI tool (like ChatGPT, Gemini, etc.) to generate a dialogue script. Specify the language and the speakers.
+                </li>
+                <li>
+                    <strong>Export to JSON:</strong> Ask the AI to export the generated dialogue script as a **JSON file** that strictly follows this **Swagger/OpenAPI schema**: 
+                    <a href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml" target="_blank">View Required Schema (schema.yaml)</a>
+                    <p>The JSON structure must include <code>"language_code"</code> and an array named <code>"dialogue"</code> with <code>"speaker"</code> and <code>"text"</code> for each line.</p>
+                </li>
+                <li>
+                    <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"** button above and select your generated JSON file.
+                </li>
+                <li>
+                    <strong>Read:</strong> Use the **"Read All Dialogue"** button or click on individual lines to hear the conversation using your browser's native Text-to-Speech (TTS) voices.
+                </li>
+            </ol>
+        </div>
+        
     </div>
 
     <div id="log">
-        <strong>訊息紀錄:</strong><br>
+        <strong>Message Log:</strong><br>
     </div>
 
     <script>
@@ -60,152 +82,149 @@
         let dialogueData = null;
         let voices = [];
         let currentUtterance = null;
-        let dialogueIndex = 0; // 用於一次過閱讀的索引
+        let dialogueIndex = 0; // Index for reading all
+        const howToUseHtml = document.querySelector('.how-to-use').outerHTML; // Store the initial content
 
-        // --- 語音初始化 ---
+        // --- Voice Initialization ---
         function populateVoices() {
             voices = synth.getVoices();
-            logMessage(`找到 ${voices.length} 個語音。`);
-            // 由於瀏覽器載入語音需要時間，所以監聽 onvoiceschanged
+            logMessage(`Found ${voices.length} system voices.`);
         }
 
         if (synth.onvoiceschanged !== undefined) {
             synth.onvoiceschanged = populateVoices;
         } else {
-            // 某些瀏覽器可能直接返回語音列表
             populateVoices();
         }
 
-        // --- 核心 TTS 函數 ---
-        function speak(text, lang, speakerName) {
-            // 停止當前正在說話的語音
-            if (currentUtterance) {
+        // --- Utility Functions ---
+        function logMessage(message, isError = false) {
+            const time = new Date().toLocaleTimeString('en-US');
+            const color = isError ? 'red' : 'green';
+            logDiv.innerHTML = `<span style="color:${color};">[${time}] ${message}</span><br>` + logDiv.innerHTML;
+            logDiv.scrollTop = 0; // Scroll to the top to see the latest message
+        }
+
+        function getVoice(lang, speakerName) {
+            // 1. Try to match by language AND speaker name hint
+            let voiceMatch = voices.find(v => 
+                v.lang.startsWith(lang) && 
+                v.name.toLowerCase().includes(speakerName.toLowerCase())
+            );
+            
+            // 2. Fallback: Match by language only
+            if (!voiceMatch) {
+                voiceMatch = voices.find(v => v.lang.startsWith(lang));
+            }
+            return voiceMatch;
+        }
+
+        // --- Core TTS Function ---
+        function speak(text, lang, speakerName, lineElement, isAllMode = false, callback = () => {}) {
+            // Stop current speech if not in continuous mode
+            if (!isAllMode && synth.speaking) {
                 synth.cancel();
             }
 
             const utterance = new SpeechSynthesisUtterance(text);
-            const rate = parseFloat(rateSlider.value);
+            utterance.rate = parseFloat(rateSlider.value);
 
-            // 根據語言和說話者名稱嘗試尋找合適的聲音
-            let voiceMatch = voices.find(v => v.lang.startsWith(lang));
+            const voiceMatch = getVoice(lang, speakerName);
             
-            // 嘗試根據 speakerName 選擇特定名稱的聲音 (這需要知道系統聲音的名稱，可能不適用所有系統)
-            if (!voiceMatch) {
-                voiceMatch = voices.find(v => v.name.toLowerCase().includes(speakerName.toLowerCase()) && v.lang.startsWith(lang));
-            }
-            
-            // 如果沒有匹配到，就用第一個匹配語言的聲音
             if (voiceMatch) {
                 utterance.voice = voiceMatch;
-                logMessage(`使用聲音: ${voiceMatch.name} (${voiceMatch.lang}) 給 ${speakerName}`);
+                logMessage(`Using voice: ${voiceMatch.name} (${voiceMatch.lang}) for ${speakerName}`);
             } else {
-                utterance.lang = lang; // 設置語言標籤，讓系統自動選擇
-                logMessage(`未找到特定聲音，使用預設聲音和語言標籤: ${lang}`);
+                utterance.lang = lang; 
+                logMessage(`No specific voice found. Using default voice for language: ${lang}`);
             }
 
-            utterance.rate = rate;
             currentUtterance = utterance;
 
+            // Highlight the speaking line
+            document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
+            if (lineElement) {
+                lineElement.classList.add('current-speaking');
+                lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            stopBtn.disabled = false;
+
             utterance.onend = () => {
-                logMessage(`對話結束: ${text.substring(0, 30)}...`);
-                // 清除高亮顯示
-                document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
+                logMessage(`Speech ended: ${text.substring(0, 30)}...`);
+                // Clear highlight only if not transitioning immediately in readAll mode
+                if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
+                    document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
+                    stopBtn.disabled = true;
+                    readAllBtn.disabled = !dialogueData || false;
+                }
                 currentUtterance = null;
+                callback();
             };
 
             utterance.onerror = (event) => {
-                logMessage(`TTS 錯誤: ${event.error}`, true);
+                logMessage(`TTS Error for ${speakerName}: ${event.error}`, true);
+                currentUtterance = null;
+                callback();
             };
 
             synth.speak(utterance);
         }
 
-        // --- 單句閱讀 ---
+        // --- Single Line Reading ---
         function handleLineClick(event) {
             const lineElement = event.currentTarget;
             const index = parseInt(lineElement.dataset.index);
             const line = dialogueData.dialogue[index];
 
-            // 突出顯示當前句子
-            document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
-            lineElement.classList.add('current-speaking');
-
-            speak(line.text, dialogueData.language_code, line.speaker);
+            // Stop continuous reading
+            if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
+                synth.cancel();
+            }
+            
+            speak(line.text, dialogueData.language_code, line.speaker, lineElement, false);
         }
 
-        // --- 一次過閱讀所有對話 ---
+        // --- Read All Dialogue ---
         function readAllDialogue() {
             if (!dialogueData) return;
 
-            // 確保停止任何現有的語音
-            synth.cancel();
-            
+            synth.cancel(); // Stop any previous speech
             dialogueIndex = 0;
+            readAllBtn.disabled = true;
+            logMessage('Starting continuous reading...');
             readNextLine();
         }
 
         function readNextLine() {
-            if (dialogueIndex >= dialogueData.dialogue.length) {
-                logMessage('所有對話閱讀完畢。');
+            if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
+                logMessage('All dialogue lines finished.');
                 stopBtn.disabled = true;
                 readAllBtn.disabled = false;
+                document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
                 return;
             }
 
             const line = dialogueData.dialogue[dialogueIndex];
-            const rate = parseFloat(rateSlider.value);
-            
-            // 突出顯示當前句子
-            document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
             const lineElement = document.querySelector(`.dialogue-line[data-index="${dialogueIndex}"]`);
-            if (lineElement) {
-                lineElement.classList.add('current-speaking');
-                lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
 
-
-            const utterance = new SpeechSynthesisUtterance(line.text);
-            utterance.rate = rate;
-            utterance.lang = dialogueData.language_code; // 預設使用 JSON 檔案中的語言
-            
-            // 嘗試根據說話者名稱尋找聲音
-            let voiceMatch = voices.find(v => 
-                v.name.toLowerCase().includes(line.speaker.toLowerCase()) && 
-                v.lang.startsWith(dialogueData.language_code)
-            );
-            
-            if (voiceMatch) {
-                utterance.voice = voiceMatch;
-            } else {
-                utterance.lang = dialogueData.language_code; 
-            }
-            
-            currentUtterance = utterance;
-            
-            utterance.onend = () => {
+            speak(line.text, dialogueData.language_code, line.speaker, lineElement, true, () => {
+                // This callback runs after onend or onerror
                 dialogueIndex++;
                 readNextLine();
-            };
-
-            utterance.onerror = (event) => {
-                logMessage(`TTS 錯誤: ${event.error} (句子 ${dialogueIndex + 1})`, true);
-                dialogueIndex++;
-                readNextLine();
-            };
-
-            synth.speak(utterance);
+            });
         }
 
-        // --- 停止功能 ---
+        // --- Stop Function ---
         function stopReading() {
             synth.cancel();
             document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
             stopBtn.disabled = true;
-            readAllBtn.disabled = false;
-            logMessage('閱讀已停止。');
+            readAllBtn.disabled = !dialogueData || false;
+            logMessage('Reading stopped by user.');
         }
 
-        // --- JSON 處理 ---
+        // --- JSON Handling ---
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -213,28 +232,32 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    dialogueData = JSON.parse(e.target.result);
+                    const data = JSON.parse(e.target.result);
+                    // Basic validation based on schema requirements
+                    if (!data.language_code || !Array.isArray(data.dialogue)) {
+                        throw new Error('Invalid JSON format: Missing "language_code" or "dialogue" array.');
+                    }
+                    dialogueData = data;
                     renderDialogue(dialogueData);
                     readAllBtn.disabled = false;
-                    logMessage('JSON 檔案載入成功。');
+                    logMessage('JSON file loaded successfully.');
                 } catch (err) {
-                    dialogueContainer.innerHTML = '<p style="color: red;">JSON 檔案解析錯誤。請確保格式正確。</p>';
+                    dialogueContainer.innerHTML = `<p style="color: red;">JSON Parsing Error. Please ensure the file follows the specified schema.</p>${howToUseHtml}`;
                     readAllBtn.disabled = true;
-                    logMessage(`JSON 解析錯誤: ${err.message}`, true);
+                    logMessage(`JSON Parsing Error: ${err.message}`, true);
                 }
             };
             reader.readAsText(file);
         });
 
-        // --- 渲染對話 ---
+        // --- Rendering Dialogue ---
         function renderDialogue(data) {
-            if (!data.dialogue || !Array.isArray(data.dialogue)) {
-                dialogueContainer.innerHTML = '<p style="color: red;">JSON 格式無效：缺少 "dialogue" 陣列。</p>';
-                readAllBtn.disabled = true;
-                return;
-            }
+            dialogueContainer.innerHTML = ''; // Clear existing content (including how-to-use)
+            
+            const langH3 = document.createElement('h3');
+            langH3.textContent = `Language Code: ${data.language_code}`;
+            dialogueContainer.appendChild(langH3);
 
-            dialogueContainer.innerHTML = `<h3>語言代碼 (Language Code): ${data.language_code}</h3>`;
             data.dialogue.forEach((line, index) => {
                 const lineDiv = document.createElement('div');
                 lineDiv.className = 'dialogue-line';
@@ -243,45 +266,26 @@
                 lineDiv.addEventListener('click', handleLineClick);
                 dialogueContainer.appendChild(lineDiv);
             });
-            logMessage('對話內容已顯示。');
+            logMessage('Dialogue content displayed.');
         }
 
-        // --- 事件監聽 ---
+        // --- Event Listeners ---
         rateSlider.addEventListener('input', () => {
             rateValueSpan.textContent = rateSlider.value;
-            // 如果正在說話，立即更新語速
+            // Update rate instantly if speaking
             if (currentUtterance && !synth.paused) {
                 currentUtterance.rate = parseFloat(rateSlider.value);
             }
         });
 
-        readAllBtn.addEventListener('click', () => {
-            readAllDialogue();
-            readAllBtn.disabled = true;
-            stopBtn.disabled = false;
-        });
-
+        readAllBtn.addEventListener('click', readAllDialogue);
         stopBtn.addEventListener('click', stopReading);
-        
-        // 當瀏覽器開始/停止播放時更新按鈕狀態
-        synth.addEventListener('end', () => {
-            if (dialogueIndex >= dialogueData.dialogue.length) {
-                stopBtn.disabled = true;
-                readAllBtn.disabled = false;
-            }
+
+        // Ensure initial state
+        document.addEventListener('DOMContentLoaded', () => {
+            readAllBtn.disabled = true;
+            stopBtn.disabled = true;
         });
-        
-        synth.addEventListener('start', () => {
-            stopBtn.disabled = false;
-        });
-        
-        // --- 訊息紀錄 ---
-        function logMessage(message, isError = false) {
-            const time = new Date().toLocaleTimeString('zh-Hant');
-            const color = isError ? 'red' : 'green';
-            logDiv.innerHTML += `<span style="color:${color};">[${time}] ${message}</span><br>`;
-            logDiv.scrollTop = logDiv.scrollHeight; // 捲動到底部
-        }
     </script>
 </body>
 </html>
