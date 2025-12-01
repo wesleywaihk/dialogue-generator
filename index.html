@@ -1,120 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-   
   <head>
-       
     <meta charset="UTF-8" />
-       
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-       
+
     <title>JSON Dialogue TTS Reader</title>
-       
+
     <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 20px;
-            }
-            .controls,
-            .dialogue-controls,
-            .how-to-use {
-              margin-bottom: 20px;
-              padding: 15px;
-              border: 1px solid #ccc;
-              border-radius: 5px;
-            }
-            .dialogue-line {
-              margin-bottom: 10px;
-              padding: 10px;
-              border-bottom: 1px dashed #eee;
-              cursor: pointer;
-            }
-            .dialogue-line:hover {
-              background-color: #f0f0f0;
-            }
-            .speaker {
-              font-weight: bold;
-              margin-right: 10px;
-              color: #0056b3;
-            }
-            .current-speaking {
-              background-color: #e6f7ff;
-              border-left: 5px solid #007bff;
-            }
-            label {
-              display: block;
-              margin-bottom: 5px;
-              font-weight: bold;
-            }
-            input[type="range"] {
-              width: 300px;
-            }
-            button {
-              padding: 10px 15px;
-              margin-right: 10px;
-              cursor: pointer;
-            }
-            #log {
-              margin-top: 20px;
-              padding: 10px;
-              background-color: #f9f9f9;
-              border: 1px solid #ddd;
-              max-height: 150px;
-              overflow-y: auto;
-              font-size: 0.9em;
-            }
-            .how-to-use {
-              background-color: #e6f7ff;
-              border-color: #b3d9ff;
-            }
-            .how-to-use ol li {
-              margin-bottom: 10px;
-            }
-            .download-links {
-              margin-top: 15px;
-              font-size: 0.95em;
-            }
-         
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .controls,
+      .dialogue-controls,
+      .how-to-use {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .dialogue-line {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px dashed #eee;
+        cursor: pointer;
+      }
+      .dialogue-line:hover {
+        background-color: #f0f0f0;
+      }
+      .speaker {
+        font-weight: bold;
+        margin-right: 10px;
+        color: #0056b3;
+      }
+      .current-speaking {
+        background-color: #e6f7ff;
+        border-left: 5px solid #007bff;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="range"] {
+        width: 300px;
+      }
+      button {
+        padding: 10px 15px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #log {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.9em;
+      }
+      .how-to-use {
+        background-color: #e6f7ff;
+        border-color: #b3d9ff;
+      }
+      .how-to-use ol li {
+        margin-bottom: 10px;
+      }
+      .download-links {
+        margin-top: 15px;
+        font-size: 0.95em;
+      }
     </style>
-     
   </head>
-   
+
   <body>
-       
     <h1>🗣️ JSON Dialogue TTS Reader</h1>
 
-       
     <div class="controls">
-            <label for="fileInput">Upload JSON Dialogue File:</label>      
-      <input type="file" id="fileInput" accept="application/json" />      
-      <button id="eraseDataBtn" disabled>❌ Erase Stored Data</button>      
+      <label for="fileInput">Upload JSON Dialogue File:</label>
+      <input type="file" id="fileInput" accept="application/json" />
+      <button id="eraseDataBtn" disabled>❌ Erase Stored Data</button>
       <div class="download-links">
-                🔗 **Resources:** Download Sample JSON:        
+        🔗 **Resources:** Download Sample JSON:
         <a href="data-sample-en.json" download="data-sample-en.json">English</a>
-                |        
+        |
         <a href="data-sample-zh.json" download="data-sample-zh.json">Chinese</a>
-                |        
+        |
         <a href="data-sample-jp.json" download="data-sample-jp.json">Japanese</a
         ><br />
-                View Required Schema (.yaml):        
+        View Required Schema (.yaml):
         <a
           href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml"
           target="_blank"
           >https://wesleywaihk.github.io/dialogue-generator/schema.yaml</a
         >
-             
       </div>
-         
     </div>
 
-       
     <div class="dialogue-controls">
-           
       <h2>Reader Settings</h2>
-           
+
       <label for="rateSlider"
         >Speech Rate: <span id="rateValue">1.0</span></label
       >
-           
+
       <input
         type="range"
         id="rateSlider"
@@ -124,108 +114,90 @@
         step="0.1"
       />
 
-           
       <p>
-                <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>  
-              <button id="stopBtn" disabled>⏹️ Stop Reading</button>      
+        <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
+        <button id="stopBtn" disabled>⏹️ Stop Reading</button>
       </p>
-           
+
       <p>Click any line below to read it individually.</p>
-         
     </div>
 
-       
     <h2>📜 Dialogue Content</h2>
-       
+
     <div id="dialogueContainer">
-           
       <div class="how-to-use">
-               
         <h3>How to Use This Reader</h3>
-               
+
         <ol>
-                   
           <li>
-                        <strong>Generate Dialogue:</strong> Prepare your own
-            dialogue.          
+            <strong>Generate Dialogue:</strong> Prepare your own dialogue.
           </li>
-                   
+
           <li>
-                        <strong>Export to JSON:</strong> Export the generated
-            dialogue             script as a **JSON file** that strictly follows
-            this             **Swagger/OpenAPI schema**:            
+            <strong>Export to JSON:</strong> Export the generated dialogue
+            script as a **JSON file** that strictly follows this
+            **Swagger/OpenAPI schema**:
             <a
               href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml"
               target="_blank"
               >View Required Schema (schema.yaml)</a
             >
-                       
+
             <p>
-                            The JSON structure must include
-              <code>"language_code"</code> and               an array named
-              <code>"dialogue"</code> with              
-              <code>"speaker"</code> and <code>"text"</code> for each line.    
-                     
+              The JSON structure must include
+              <code>"language_code"</code> and an array named
+              <code>"dialogue"</code> with <code>"speaker"</code> and
+              <code>"text"</code> for each line.
             </p>
-                       
+
             <p>
-                            Sample JSON:              
+              Sample JSON:
               <a href="data-sample-en.json" download="data-sample-en.json"
                 >English</a
               >
-                            |              
+              |
               <a href="data-sample-zh.json" download="data-sample-zh.json"
                 >Chinese</a
               >
-                            |              
+              |
               <a href="data-sample-jp.json" download="data-sample-jp.json"
                 >Japanese</a
               ><br />
-                         
             </p>
-                     
           </li>
-                   
+
           <li>
-                        <strong>Upload:</strong> Click the **"Upload JSON
-            Dialogue File"**             button above and select your generated
-            JSON file.          
+            <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"**
+            button above and select your generated JSON file.
           </li>
-                   
+
           <li>
-                        <strong>Read:</strong> Use the **"Read All Dialogue"**
-            button or             click on individual lines to hear the
-            conversation using your             browser's native Text-to-Speech
-            (TTS) voices.          
+            <strong>Read:</strong> Use the **"Read All Dialogue"** button or
+            click on individual lines to hear the conversation using your
+            browser's native Text-to-Speech (TTS) voices.
           </li>
-                 
         </ol>
-               
+
         <p>
-                    We use your device's built-in, free Text-to-Speech engine.
-          No extra           charges, ever!        
+          We use your device's built-in, free Text-to-Speech engine. No extra
+          charges, ever!
         </p>
-               
+
         <p>
-                    Android Edge Tip: If the speech doesn't start automatically,
-          look for           and enable your browser's 'Read Aloud' setting.    
-             
+          Android Edge Tip: If the speech doesn't start automatically, look for
+          and enable your browser's 'Read Aloud' setting.
         </p>
-               
+
         <p>
-                    iPhone/iOS Users: We are aware that the speech quality on
-          iPhones can           sometimes be poor. We hope future browser
-          updates will improve this           experience!        
+          iPhone/iOS Users: We are aware that the speech quality on iPhones can
+          sometimes be poor. We hope future browser updates will improve this
+          experience!
         </p>
-             
       </div>
-         
     </div>
 
-       
     <div id="log"><strong>Message Log:</strong><br /></div>
 
-       
     <script>
       const synth = window.speechSynthesis;
       const dialogueContainer = document.getElementById("dialogueContainer");
@@ -572,6 +544,5 @@
         }
       });
     </script>
-     
   </body>
 </html>
