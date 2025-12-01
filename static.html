@@ -125,7 +125,7 @@
       let voices = [];
       let currentUtterance = null;
       let dialogueIndex = 0;
-      let speakerVoiceMap = {}; // FIX: New global flag to track if "Read All" mode is active
+      let speakerVoiceMap = {};
       let isReadingAll = false; // --- Voice Initialization ---
 
       function populateVoices() {
@@ -286,14 +286,14 @@
 
         synth.cancel(); // Stop any previous speech
         dialogueIndex = 0;
-        readAllBtn.disabled = true; // FIX: Set flag to indicate continuous reading is active
+        readAllBtn.disabled = true; // Set flag to indicate continuous reading is active
         isReadingAll = true;
         logMessage("Starting continuous reading...");
         readNextLine();
       }
 
       function readNextLine() {
-        // FIX: Check if reading was stopped externally or if we are at the end
+        // Check if reading was stopped externally or if we are at the end
         if (
           !isReadingAll ||
           !dialogueData ||
@@ -331,7 +331,7 @@
       } // --- Stop Function ---
 
       function stopReading() {
-        // FIX: Set flag to false BEFORE canceling speech
+        // Set flag to false BEFORE canceling speech
         isReadingAll = false;
         synth.cancel();
         document
@@ -361,8 +361,12 @@
       } // --- Static Data Loading ---
 
       async function loadStaticData() {
+        // FIX: Append a unique timestamp (cache buster) to the file URL
+        const cacheBuster = `?t=${new Date().getTime()}`;
+        const fetchURL = STATIC_DATA_FILE + cacheBuster;
+
         try {
-          const response = await fetch(STATIC_DATA_FILE);
+          const response = await fetch(fetchURL);
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
@@ -382,7 +386,7 @@
           }
 
           readAllBtn.disabled = false;
-          logMessage(`${STATIC_DATA_FILE} loaded successfully.`);
+          logMessage(`${STATIC_DATA_FILE} loaded successfully (Cache Busted).`);
         } catch (err) {
           dialogueContainer.innerHTML = `<p style="color: red;">Error loading static data from <strong>${STATIC_DATA_FILE}</strong>. Please ensure the file exists in the same directory and follows the required schema. (Error: ${err.message})</p>`;
           readAllBtn.disabled = true;
