@@ -2,8 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Static JSON Dialogue TTS Reader</title>
+
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -64,6 +67,7 @@
       }
     </style>
   </head>
+
   <body>
     <h1>🗣️ Static JSON Dialogue TTS Reader</h1>
 
@@ -76,9 +80,11 @@
 
     <div class="dialogue-controls">
       <h2>Reader Settings</h2>
+
       <label for="rateSlider"
         >Speech Rate: <span id="rateValue">1.0</span></label
       >
+
       <input
         type="range"
         id="rateSlider"
@@ -92,10 +98,12 @@
         <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
         <button id="stopBtn" disabled>⏹️ Stop Reading</button>
       </p>
+
       <p>Click any line below to read it individually.</p>
     </div>
 
     <h2>📜 Dialogue Content</h2>
+
     <div id="dialogueContainer">
       <p>Loading dialogue content...</p>
     </div>
@@ -117,20 +125,22 @@
       let voices = [];
       let currentUtterance = null;
       let dialogueIndex = 0;
+      let speakerVoiceMap = {}; // NEW: Map to store the assigned voice for each unique speaker // --- Voice Initialization ---
 
-      // --- Voice Initialization ---
       function populateVoices() {
         voices = synth.getVoices();
-        logMessage(`Found ${voices.length} system voices.`);
+        logMessage(`Found ${voices.length} system voices.`); // NEW: Initialize speaker map if data is already loaded
+        if (dialogueData) {
+          initializeVoicesForDialogue();
+        }
       }
 
       if (synth.onvoiceschanged !== undefined) {
         synth.onvoiceschanged = populateVoices;
       } else {
         populateVoices();
-      }
+      } // --- Utility Functions ---
 
-      // --- Utility Functions ---
       function logMessage(message, isError = false) {
         const time = new Date().toLocaleTimeString("en-US");
         const color = isError ? "red" : "green";
@@ -138,24 +148,47 @@
           `<span style="color:${color};">[${time}] ${message}</span><br>` +
           logDiv.innerHTML;
         logDiv.scrollTop = 0;
+      } // NEW: Function to map unique speakers to distinct available voices
+
+      function initializeVoicesForDialogue() {
+        speakerVoiceMap = {}; // Clear map
+        if (!dialogueData || voices.length === 0) return;
+
+        const targetLang = dialogueData.language_code; // Filter voices that match the target language
+        const langVoices = voices.filter((v) => v.lang.startsWith(targetLang));
+
+        if (langVoices.length === 0) {
+          logMessage(
+            `Warning: No voices found for language code ${targetLang}. Using default browser voice.`,
+            true
+          );
+          return;
+        } // Get unique speakers from the dialogue
+
+        const uniqueSpeakers = [
+          ...new Set(dialogueData.dialogue.map((line) => line.speaker)),
+        ];
+
+        uniqueSpeakers.forEach((speaker, index) => {
+          // Assign voices in a round-robin manner (index % length)
+          const voiceIndex = index % langVoices.length;
+          const selectedVoice = langVoices[voiceIndex];
+          speakerVoiceMap[speaker] = selectedVoice;
+          logMessage(
+            `Mapped speaker **${speaker}** to voice: **${selectedVoice.name}**`
+          );
+        });
       }
 
       function getVoice(lang, speakerName) {
-        // 1. Try to match by language AND speaker name hint
-        let voiceMatch = voices.find(
-          (v) =>
-            v.lang.startsWith(lang) &&
-            v.name.toLowerCase().includes(speakerName.toLowerCase())
-        );
+        // FIX: Use the pre-mapped voice for consistent speaker assignment
+        if (speakerVoiceMap[speakerName]) {
+          return speakerVoiceMap[speakerName];
+        } // Fallback: Match by language only (Original Fallback)
 
-        // 2. Fallback: Match by language only
-        if (!voiceMatch) {
-          voiceMatch = voices.find((v) => v.lang.startsWith(lang));
-        }
-        return voiceMatch;
-      }
+        return voices.find((v) => v.lang.startsWith(lang));
+      } // --- Core TTS Function ---
 
-      // --- Core TTS Function ---
       function speak(
         text,
         lang,
@@ -186,9 +219,8 @@
           );
         }
 
-        currentUtterance = utterance;
+        currentUtterance = utterance; // Highlight the speaking line
 
-        // Highlight the speaking line
         document
           .querySelectorAll(".current-speaking")
           .forEach((el) => el.classList.remove("current-speaking"));
@@ -200,8 +232,7 @@
         stopBtn.disabled = false;
 
         utterance.onend = () => {
-          logMessage(`Speech ended: ${text.substring(0, 30)}...`);
-          // Clear highlight only if not transitioning immediately in readAll mode
+          logMessage(`Speech ended: ${text.substring(0, 30)}...`); // Clear highlight only if not transitioning immediately in readAll mode
           if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
             document
               .querySelectorAll(".current-speaking")
@@ -220,15 +251,13 @@
         };
 
         synth.speak(utterance);
-      }
+      } // --- Single Line Reading ---
 
-      // --- Single Line Reading ---
       function handleLineClick(event) {
         const lineElement = event.currentTarget;
         const index = parseInt(lineElement.dataset.index);
-        const line = dialogueData.dialogue[index];
+        const line = dialogueData.dialogue[index]; // Stop continuous reading
 
-        // Stop continuous reading
         if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
           synth.cancel();
         }
@@ -240,9 +269,8 @@
           lineElement,
           false
         );
-      }
+      } // --- Read All Dialogue ---
 
-      // --- Read All Dialogue ---
       function readAllDialogue() {
         if (!dialogueData) return;
 
@@ -281,9 +309,8 @@
             readNextLine();
           }
         );
-      }
+      } // --- Stop Function ---
 
-      // --- Stop Function ---
       function stopReading() {
         synth.cancel();
         document
@@ -292,9 +319,8 @@
         stopBtn.disabled = true;
         readAllBtn.disabled = !dialogueData || false;
         logMessage("Reading stopped by user.");
-      }
+      } // --- Rendering Dialogue ---
 
-      // --- Rendering Dialogue ---
       function renderDialogue(data) {
         dialogueContainer.innerHTML = ""; // Clear existing content
 
@@ -311,18 +337,16 @@
           dialogueContainer.appendChild(lineDiv);
         });
         logMessage("Dialogue content displayed.");
-      }
+      } // --- Static Data Loading ---
 
-      // --- Static Data Loading ---
       async function loadStaticData() {
         try {
           const response = await fetch(STATIC_DATA_FILE);
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
-          const data = await response.json();
+          const data = await response.json(); // Basic validation
 
-          // Basic validation
           if (!data.language_code || !Array.isArray(data.dialogue)) {
             throw new Error(
               'Invalid JSON format: Missing "language_code" or "dialogue" array.'
@@ -330,7 +354,12 @@
           }
 
           dialogueData = data;
-          renderDialogue(dialogueData);
+          renderDialogue(dialogueData); // NEW: Map speakers to voices immediately after data load, if voices are available
+
+          if (voices.length > 0) {
+            initializeVoicesForDialogue();
+          }
+
           readAllBtn.disabled = false;
           logMessage(`${STATIC_DATA_FILE} loaded successfully.`);
         } catch (err) {
@@ -338,21 +367,18 @@
           readAllBtn.disabled = true;
           logMessage(`Data Loading Error: ${err.message}`, true);
         }
-      }
+      } // --- Event Listeners ---
 
-      // --- Event Listeners ---
       rateSlider.addEventListener("input", () => {
-        rateValueSpan.textContent = rateSlider.value;
-        // Update rate instantly if speaking
+        rateValueSpan.textContent = rateSlider.value; // Update rate instantly if speaking
         if (currentUtterance && !synth.paused) {
           currentUtterance.rate = parseFloat(rateSlider.value);
         }
       });
 
       readAllBtn.addEventListener("click", readAllDialogue);
-      stopBtn.addEventListener("click", stopReading);
+      stopBtn.addEventListener("click", stopReading); // Ensure initial state and load data on DOMContentLoaded
 
-      // Ensure initial state and load data on DOMContentLoaded
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
         stopBtn.disabled = true;
