@@ -1,344 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JSON Dialogue TTS Reader</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .controls, .dialogue-controls, .how-to-use { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        .dialogue-line { margin-bottom: 10px; padding: 10px; border-bottom: 1px dashed #eee; cursor: pointer; }
-        .dialogue-line:hover { background-color: #f0f0f0; }
-        .speaker { font-weight: bold; margin-right: 10px; color: #0056b3; }
-        .current-speaking { background-color: #e6f7ff; border-left: 5px solid #007bff; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="range"] { width: 300px; }
-        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; }
-        #log { margin-top: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; font-size: 0.9em; }
-        .how-to-use { background-color: #e6f7ff; border-color: #b3d9ff; }
-        .how-to-use ol li { margin-bottom: 10px; }
-        .download-links { margin-top: 15px; font-size: 0.95em; }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .controls,
+      .dialogue-controls,
+      .how-to-use {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .dialogue-line {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px dashed #eee;
+        cursor: pointer;
+      }
+      .dialogue-line:hover {
+        background-color: #f0f0f0;
+      }
+      .speaker {
+        font-weight: bold;
+        margin-right: 10px;
+        color: #0056b3;
+      }
+      .current-speaking {
+        background-color: #e6f7ff;
+        border-left: 5px solid #007bff;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="range"] {
+        width: 300px;
+      }
+      button {
+        padding: 10px 15px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #log {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.9em;
+      }
+      .how-to-use {
+        background-color: #e6f7ff;
+        border-color: #b3d9ff;
+      }
+      .how-to-use ol li {
+        margin-bottom: 10px;
+      }
+      .download-links {
+        margin-top: 15px;
+        font-size: 0.95em;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <h1>🗣️ JSON Dialogue TTS Reader</h1>
 
     <div class="controls">
-        <label for="fileInput">Upload JSON Dialogue File:</label>
-        <input type="file" id="fileInput" accept="application/json">
-        
-        <div class="download-links">
-            🔗 **Resources:**
-            Download Sample JSON: <a href="data-sample-en.json" download="data-sample-en.json">English</a> | <a href="data-sample-zh.json" download="data-sample-zh.json">Chinese</a> | <a href="data-sample-jp.json" download="data-sample-jp.json">Japanese</a><br/>
-            View Required Schema (.yaml): <a href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml" target="_blank">https://wesleywaihk.github.io/dialogue-generator/schema.yaml</a>
-        </div>
+      <label for="fileInput">Upload JSON Dialogue File:</label>
+      <input type="file" id="fileInput" accept="application/json" />
+
+      <div class="download-links">
+        🔗 **Resources:** Download Sample JSON:
+        <a href="data-sample-en.json" download="data-sample-en.json">English</a>
+        |
+        <a href="data-sample-zh.json" download="data-sample-zh.json">Chinese</a>
+        |
+        <a href="data-sample-jp.json" download="data-sample-jp.json">Japanese</a
+        ><br />
+        View Required Schema (.yaml):
+        <a
+          href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml"
+          target="_blank"
+          >https://wesleywaihk.github.io/dialogue-generator/schema.yaml</a
+        >
+      </div>
     </div>
 
     <div class="dialogue-controls">
-        <h2>Reader Settings</h2>
-        <label for="rateSlider">Speech Rate: <span id="rateValue">1.0</span></label>
-        <input type="range" id="rateSlider" min="0.5" max="2.0" value="1.0" step="0.1">
-        
-        <p>
-            <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
-            <button id="stopBtn" disabled>⏹️ Stop Reading</button>
-        </p>
-        <p>Click any line below to read it individually.</p>
+      <h2>Reader Settings</h2>
+      <label for="rateSlider"
+        >Speech Rate: <span id="rateValue">1.0</span></label
+      >
+      <input
+        type="range"
+        id="rateSlider"
+        min="0.5"
+        max="2.0"
+        value="1.0"
+        step="0.1"
+      />
+
+      <p>
+        <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
+        <button id="stopBtn" disabled>⏹️ Stop Reading</button>
+      </p>
+      <p>Click any line below to read it individually.</p>
     </div>
 
     <h2>📜 Dialogue Content</h2>
     <div id="dialogueContainer">
-        
-        <div class="how-to-use">
-            <h3>How to Use This Reader</h3>
-            <ol>
-                <li>
-                    <strong>Generate Dialogue:</strong> Use an AI tool (like ChatGPT, Gemini, etc.) to generate a dialogue script. Specify the language and the speakers.
-                </li>
-                <li>
-                    <strong>Export to JSON:</strong> Ask the AI to export the generated dialogue script as a **JSON file** that strictly follows this **Swagger/OpenAPI schema**: 
-                    <a href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml" target="_blank">View Required Schema (schema.yaml)</a>
-                    <p>The JSON structure **must** include <code>"language_code"</code>, a <code>"speakers"</code> array with optional <code>"voice_hint"</code>, and a <code>"dialogue"</code> array.</p>
-                </li>
-                <li>
-                    <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"** button above and select your generated JSON file (or use the provided sample file).
-                </li>
-                <li>
-                    <strong>Read:</strong> Use the **"Read All Dialogue"** button or click on individual lines to hear the conversation using your browser's native Text-to-Speech (TTS) voices.
-                </li>
-            </ol>
-            <p>We use your device's built-in, free Text-to-Speech engine. No extra charges, ever!</p>
+      <div class="how-to-use">
+        <h3>How to Use This Reader</h3>
+        <ol>
+          <li>
+            <strong>Generate Dialogue:</strong> Use an AI tool (like ChatGPT,
+            Gemini, etc.) to generate a dialogue script. Specify the language
+            and the speakers.
+          </li>
+          <li>
+            <strong>Export to JSON:</strong> Ask the AI to export the generated
+            dialogue script as a **JSON file** that strictly follows this
+            **Swagger/OpenAPI schema**:
+            <a
+              href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml"
+              target="_blank"
+              >View Required Schema (schema.yaml)</a
+            >
+            <p>
+              The JSON structure **must** include <code>"language_code"</code>,
+              a <code>"speakers"</code> array with optional
+              <code>"voice_hint"</code>, and a <code>"dialogue"</code> array.
+            </p>
+          </li>
+          <li>
+            <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"**
+            button above and select your generated JSON file (or use the
+            provided sample file).
+          </li>
+          <li>
+            <strong>Read:</strong> Use the **"Read All Dialogue"** button or
+            click on individual lines to hear the conversation using your
+            browser's native Text-to-Speech (TTS) voices.
+          </li>
+        </ol>
+        <p>
+          We use your device's built-in, free Text-to-Speech engine. No extra
+          charges, ever!
+        </p>
 
-            <p>Android Edge Tip: If the speech doesn't start automatically, look for and enable your browser's 'Read Aloud' setting.</p>
+        <p>
+          Android Edge Tip: If the speech doesn't start automatically, look for
+          and enable your browser's 'Read Aloud' setting.
+        </p>
 
-            <p>iPhone/iOS Users: We are aware that the speech quality on iPhones can sometimes be poor. We hope future browser updates will improve this experience!</p>
-        </div>
-        
+        <p>
+          iPhone/iOS Users: We are aware that the speech quality on iPhones can
+          sometimes be poor. We hope future browser updates will improve this
+          experience!
+        </p>
+      </div>
     </div>
 
-    <div id="log">
-        <strong>Message Log:</strong><br>
-    </div>
+    <div id="log"><strong>Message Log:</strong><br /></div>
+
+    <div id="log"><strong>Message Log:</strong><br /></div>
 
     <script>
-        const synth = window.speechSynthesis;
-        const dialogueContainer = document.getElementById('dialogueContainer');
-        const fileInput = document.getElementById('fileInput');
-        const rateSlider = document.getElementById('rateSlider');
-        const rateValueSpan = document.getElementById('rateValue');
-        const readAllBtn = document.getElementById('readAllBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const logDiv = document.getElementById('log');
+      const synth = window.speechSynthesis
+      const dialogueContainer = document.getElementById("dialogueContainer")
+      const fileInput = document.getElementById("fileInput")
+      const rateSlider = document.getElementById("rateSlider")
+      const rateValueSpan = document.getElementById("rateValue")
+      const readAllBtn = document.getElementById("readAllBtn")
+      const stopBtn = document.getElementById("stopBtn")
+      const logDiv = document.getElementById("log")
 
-        let dialogueData = null;
-        let voices = [];
-        let currentUtterance = null;
-        let dialogueIndex = 0; // Index for reading all
-        const howToUseHtml = document.querySelector('.how-to-use').outerHTML; // Store the initial content
+      let dialogueData = null
+      let voices = []
+      let currentUtterance = null
+      let dialogueIndex = 0 // Index for reading all
+      const howToUseHtml = document.querySelector(".how-to-use").outerHTML // Store the initial content
 
-        // --- Voice Initialization ---
-        function populateVoices() {
-            voices = synth.getVoices();
-            logMessage(`Found ${voices.length} system voices.`);
+      // --- Voice Initialization ---
+      function populateVoices() {
+        voices = synth.getVoices()
+        logMessage(`Found ${voices.length} system voices.`)
+      }
+
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoices
+      } else {
+        populateVoices()
+      }
+
+      // --- Utility Functions ---
+      function logMessage(message, isError = false) {
+        const time = new Date().toLocaleTimeString("en-US")
+        const color = isError ? "red" : "green"
+        logDiv.innerHTML =
+          `<span style="color:${color};">[${time}] ${message}</span><br>` +
+          logDiv.innerHTML
+        logDiv.scrollTop = 0 // Scroll to the top to see the latest message
+      }
+
+      // --- Voice Selection Logic (UPDATED) ---
+      function getVoice(lang, speakerName) {
+        let voiceMatch = null
+        let hint = ""
+
+        // 1. Find the speaker definition and hint from the loaded JSON data
+        const speakerDef = dialogueData?.speakers?.find(
+          (s) => s.name === speakerName
+        )
+        if (speakerDef && speakerDef.voice_hint) {
+          hint = speakerDef.voice_hint.toLowerCase()
         }
 
-        if (synth.onvoiceschanged !== undefined) {
-            synth.onvoiceschanged = populateVoices;
+        // 2. Try to match by language AND voice_hint (e.g., "Male", "High Pitch", "UK English")
+        if (hint) {
+          voiceMatch = voices.find(
+            (v) =>
+              v.lang.startsWith(lang) && v.name.toLowerCase().includes(hint)
+          )
+        }
+
+        // 3. Fallback: Try to match by language AND speakerName (original logic)
+        if (!voiceMatch) {
+          voiceMatch = voices.find(
+            (v) =>
+              v.lang.startsWith(lang) &&
+              v.name.toLowerCase().includes(speakerName.toLowerCase())
+          )
+        }
+
+        // 4. Final Fallback: Match by language only
+        if (!voiceMatch) {
+          voiceMatch = voices.find((v) => v.lang.startsWith(lang))
+        }
+
+        if (voiceMatch) {
+          logMessage(
+            `Selected voice for ${speakerName}: ${
+              voiceMatch.name
+            } (Hint used: ${hint || "None"})`
+          )
         } else {
-            populateVoices();
+          logMessage(
+            `Could not find specific voice for ${speakerName}. Using default language setting.`
+          )
         }
 
-        // --- Utility Functions ---
-        function logMessage(message, isError = false) {
-            const time = new Date().toLocaleTimeString('en-US');
-            const color = isError ? 'red' : 'green';
-            logDiv.innerHTML = `<span style="color:${color};">[${time}] ${message}</span><br>` + logDiv.innerHTML;
-            logDiv.scrollTop = 0; // Scroll to the top to see the latest message
+        return voiceMatch
+      }
+
+      // --- Core TTS Function ---
+      function speak(
+        text,
+        lang,
+        speakerName,
+        lineElement,
+        isAllMode = false,
+        callback = () => {}
+      ) {
+        if (!synth) {
+          logMessage("Browser does not support TTS API.", true)
+          return
         }
 
-        // --- Voice Selection Logic (UPDATED) ---
-        function getVoice(lang, speakerName) {
-            let voiceMatch = null;
-            let hint = '';
-
-            // 1. Find the speaker definition and hint from the loaded JSON data
-            const speakerDef = dialogueData?.speakers?.find(s => s.name === speakerName);
-            if (speakerDef && speakerDef.voice_hint) {
-                hint = speakerDef.voice_hint.toLowerCase();
-            }
-
-            // 2. Try to match by language AND voice_hint (e.g., "Male", "High Pitch", "UK English")
-            if (hint) {
-                voiceMatch = voices.find(v => 
-                    v.lang.startsWith(lang) && 
-                    v.name.toLowerCase().includes(hint)
-                );
-            }
-            
-            // 3. Fallback: Try to match by language AND speakerName (original logic)
-            if (!voiceMatch) {
-                voiceMatch = voices.find(v => 
-                    v.lang.startsWith(lang) && 
-                    v.name.toLowerCase().includes(speakerName.toLowerCase())
-                );
-            }
-
-            // 4. Final Fallback: Match by language only
-            if (!voiceMatch) {
-                voiceMatch = voices.find(v => v.lang.startsWith(lang));
-            }
-
-            if (voiceMatch) {
-                logMessage(`Selected voice for ${speakerName}: ${voiceMatch.name} (Hint used: ${hint || 'None'})`);
-            } else {
-                 logMessage(`Could not find specific voice for ${speakerName}. Using default language setting.`);
-            }
-
-            return voiceMatch;
+        // Stop current speech if not in continuous mode
+        if (!isAllMode && synth.speaking) {
+          synth.cancel()
         }
 
-        // --- Core TTS Function ---
-        function speak(text, lang, speakerName, lineElement, isAllMode = false, callback = () => {}) {
-            if (!synth) {
-                logMessage("Browser does not support TTS API.", true);
-                return;
-            }
-            
-            // Stop current speech if not in continuous mode
-            if (!isAllMode && synth.speaking) {
-                synth.cancel();
-            }
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = parseFloat(rateSlider.value)
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = parseFloat(rateSlider.value);
+        const voiceMatch = getVoice(lang, speakerName)
 
-            const voiceMatch = getVoice(lang, speakerName);
-            
-            if (voiceMatch) {
-                utterance.voice = voiceMatch;
-            } else {
-                utterance.lang = lang; // Set language tag as a fallback
-            }
-
-            currentUtterance = utterance;
-
-            // Highlight the speaking line
-            document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
-            if (lineElement) {
-                lineElement.classList.add('current-speaking');
-                lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            
-            stopBtn.disabled = false;
-
-            utterance.onend = () => {
-                logMessage(`Speech ended: ${text.substring(0, 30)}...`);
-                if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
-                    document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
-                    stopBtn.disabled = true;
-                    readAllBtn.disabled = !dialogueData || false;
-                }
-                currentUtterance = null;
-                callback();
-            };
-
-            utterance.onerror = (event) => {
-                logMessage(`TTS Error for ${speakerName}: ${event.error}`, true);
-                currentUtterance = null;
-                callback();
-            };
-
-            synth.speak(utterance);
+        if (voiceMatch) {
+          utterance.voice = voiceMatch
+        } else {
+          utterance.lang = lang // Set language tag as a fallback
         }
 
-        // --- Single Line Reading ---
-        function handleLineClick(event) {
-            const lineElement = event.currentTarget;
-            const index = parseInt(lineElement.dataset.index);
-            const line = dialogueData.dialogue[index];
-            
-            if (!dialogueData) return;
+        currentUtterance = utterance
 
-            // Stop continuous reading
-            if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
-                synth.cancel();
+        // Highlight the speaking line
+        document
+          .querySelectorAll(".current-speaking")
+          .forEach((el) => el.classList.remove("current-speaking"))
+        if (lineElement) {
+          lineElement.classList.add("current-speaking")
+          lineElement.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+
+        stopBtn.disabled = false
+
+        utterance.onend = () => {
+          logMessage(`Speech ended: ${text.substring(0, 30)}...`)
+          if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
+            document
+              .querySelectorAll(".current-speaking")
+              .forEach((el) => el.classList.remove("current-speaking"))
+            stopBtn.disabled = true
+            readAllBtn.disabled = !dialogueData || false
+          }
+          currentUtterance = null
+          callback()
+        }
+
+        utterance.onerror = (event) => {
+          logMessage(`TTS Error for ${speakerName}: ${event.error}`, true)
+          currentUtterance = null
+          callback()
+        }
+
+        synth.speak(utterance)
+      }
+
+      // --- Single Line Reading ---
+      function handleLineClick(event) {
+        const lineElement = event.currentTarget
+        const index = parseInt(lineElement.dataset.index)
+        const line = dialogueData.dialogue[index]
+
+        if (!dialogueData) return
+
+        // Stop continuous reading
+        if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
+          synth.cancel()
+        }
+
+        speak(
+          line.text,
+          dialogueData.language_code,
+          line.speaker,
+          lineElement,
+          false
+        )
+      }
+
+      // --- Read All Dialogue ---
+      function readAllDialogue() {
+        if (!dialogueData) return
+
+        synth.cancel() // Stop any previous speech
+        dialogueIndex = 0
+        readAllBtn.disabled = true
+        logMessage("Starting continuous reading...")
+        readNextLine()
+      }
+
+      function readNextLine() {
+        if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
+          logMessage("All dialogue lines finished.")
+          stopBtn.disabled = true
+          readAllBtn.disabled = false
+          document
+            .querySelectorAll(".current-speaking")
+            .forEach((el) => el.classList.remove("current-speaking"))
+          return
+        }
+
+        const line = dialogueData.dialogue[dialogueIndex]
+        const lineElement = document.querySelector(
+          `.dialogue-line[data-index="${dialogueIndex}"]`
+        )
+
+        speak(
+          line.text,
+          dialogueData.language_code,
+          line.speaker,
+          lineElement,
+          true,
+          () => {
+            // This callback runs after onend or onerror
+            dialogueIndex++
+            readNextLine()
+          }
+        )
+      }
+
+      // --- Stop Function ---
+      function stopReading() {
+        synth.cancel()
+        document
+          .querySelectorAll(".current-speaking")
+          .forEach((el) => el.classList.remove("current-speaking"))
+        stopBtn.disabled = true
+        readAllBtn.disabled = !dialogueData || false
+        logMessage("Reading stopped by user.")
+      }
+
+      // --- JSON Handling (UPDATED VALIDATION) ---
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result)
+            // NEW: Validate existence of language_code, dialogue, and speakers
+            if (
+              !data.language_code ||
+              !Array.isArray(data.dialogue) ||
+              !Array.isArray(data.speakers)
+            ) {
+              throw new Error(
+                'Invalid JSON format: Missing "language_code", "dialogue", or "speakers" array.'
+              )
             }
-            
-            speak(line.text, dialogueData.language_code, line.speaker, lineElement, false);
+            dialogueData = data
+            renderDialogue(dialogueData)
+            readAllBtn.disabled = false
+            logMessage("JSON file loaded successfully.")
+          } catch (err) {
+            // Re-insert how-to-use content on error
+            dialogueContainer.innerHTML = `<p style="color: red;">JSON Parsing Error. Please ensure the file follows the specified schema.</p>${howToUseHtml}`
+            readAllBtn.disabled = true
+            logMessage(`JSON Parsing Error: ${err.message}`, true)
+          }
+        }
+        reader.readAsText(file)
+      })
+
+      // --- Rendering Dialogue ---
+      function renderDialogue(data) {
+        dialogueContainer.innerHTML = "" // Clear existing content (including how-to-use)
+
+        const langH3 = document.createElement("h3")
+        langH3.textContent = `Language Code: ${data.language_code}`
+        dialogueContainer.appendChild(langH3)
+
+        // Display Speaker info
+        if (data.speakers && data.speakers.length) {
+          const speakersList = data.speakers
+            .map(
+              (s) => `<strong>${s.name}</strong> (${s.voice_hint || "No Hint"})`
+            )
+            .join(" | ")
+          const p = document.createElement("p")
+          p.innerHTML = `<strong>Speakers:</strong> ${speakersList}`
+          dialogueContainer.appendChild(p)
         }
 
-        // --- Read All Dialogue ---
-        function readAllDialogue() {
-            if (!dialogueData) return;
+        data.dialogue.forEach((line, index) => {
+          const lineDiv = document.createElement("div")
+          lineDiv.className = "dialogue-line"
+          lineDiv.dataset.index = index
+          lineDiv.innerHTML = `<span class="speaker">${line.speaker}:</span><span>${line.text}</span>`
+          lineDiv.addEventListener("click", handleLineClick)
+          dialogueContainer.appendChild(lineDiv)
+        })
+        logMessage("Dialogue content displayed.")
+      }
 
-            synth.cancel(); // Stop any previous speech
-            dialogueIndex = 0;
-            readAllBtn.disabled = true;
-            logMessage('Starting continuous reading...');
-            readNextLine();
+      // --- Event Listeners ---
+      rateSlider.addEventListener("input", () => {
+        rateValueSpan.textContent = rateSlider.value
+        if (currentUtterance && !synth.paused) {
+          currentUtterance.rate = parseFloat(rateSlider.value)
         }
+      })
 
-        function readNextLine() {
-            if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
-                logMessage('All dialogue lines finished.');
-                stopBtn.disabled = true;
-                readAllBtn.disabled = false;
-                document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
-                return;
-            }
+      readAllBtn.addEventListener("click", readAllDialogue)
+      stopBtn.addEventListener("click", stopReading)
 
-            const line = dialogueData.dialogue[dialogueIndex];
-            const lineElement = document.querySelector(`.dialogue-line[data-index="${dialogueIndex}"]`);
-
-            speak(line.text, dialogueData.language_code, line.speaker, lineElement, true, () => {
-                // This callback runs after onend or onerror
-                dialogueIndex++;
-                readNextLine();
-            });
-        }
-
-        // --- Stop Function ---
-        function stopReading() {
-            synth.cancel();
-            document.querySelectorAll('.current-speaking').forEach(el => el.classList.remove('current-speaking'));
-            stopBtn.disabled = true;
-            readAllBtn.disabled = !dialogueData || false;
-            logMessage('Reading stopped by user.');
-        }
-
-        // --- JSON Handling (UPDATED VALIDATION) ---
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    // NEW: Validate existence of language_code, dialogue, and speakers
-                    if (!data.language_code || !Array.isArray(data.dialogue) || !Array.isArray(data.speakers)) {
-                        throw new Error('Invalid JSON format: Missing "language_code", "dialogue", or "speakers" array.');
-                    }
-                    dialogueData = data;
-                    renderDialogue(dialogueData);
-                    readAllBtn.disabled = false;
-                    logMessage('JSON file loaded successfully.');
-                } catch (err) {
-                    // Re-insert how-to-use content on error
-                    dialogueContainer.innerHTML = `<p style="color: red;">JSON Parsing Error. Please ensure the file follows the specified schema.</p>${howToUseHtml}`;
-                    readAllBtn.disabled = true;
-                    logMessage(`JSON Parsing Error: ${err.message}`, true);
-                }
-            };
-            reader.readAsText(file);
-        });
-
-        // --- Rendering Dialogue ---
-        function renderDialogue(data) {
-            dialogueContainer.innerHTML = ''; // Clear existing content (including how-to-use)
-            
-            const langH3 = document.createElement('h3');
-            langH3.textContent = `Language Code: ${data.language_code}`;
-            dialogueContainer.appendChild(langH3);
-
-            // Display Speaker info
-            if (data.speakers && data.speakers.length) {
-                const speakersList = data.speakers.map(s => 
-                    `<strong>${s.name}</strong> (${s.voice_hint || 'No Hint'})`
-                ).join(' | ');
-                const p = document.createElement('p');
-                p.innerHTML = `<strong>Speakers:</strong> ${speakersList}`;
-                dialogueContainer.appendChild(p);
-            }
-
-            data.dialogue.forEach((line, index) => {
-                const lineDiv = document.createElement('div');
-                lineDiv.className = 'dialogue-line';
-                lineDiv.dataset.index = index;
-                lineDiv.innerHTML = `<span class="speaker">${line.speaker}:</span><span>${line.text}</span>`;
-                lineDiv.addEventListener('click', handleLineClick);
-                dialogueContainer.appendChild(lineDiv);
-            });
-            logMessage('Dialogue content displayed.');
-        }
-
-        // --- Event Listeners ---
-        rateSlider.addEventListener('input', () => {
-            rateValueSpan.textContent = rateSlider.value;
-            if (currentUtterance && !synth.paused) {
-                currentUtterance.rate = parseFloat(rateSlider.value);
-            }
-        });
-
-        readAllBtn.addEventListener('click', readAllDialogue);
-        stopBtn.addEventListener('click', stopReading);
-
-        // Ensure initial state
-        document.addEventListener('DOMContentLoaded', () => {
-            readAllBtn.disabled = true;
-            stopBtn.disabled = true;
-        });
+      // Ensure initial state
+      document.addEventListener("DOMContentLoaded", () => {
+        readAllBtn.disabled = true
+        stopBtn.disabled = true
+      })
     </script>
-</body>
+  </body>
 </html>

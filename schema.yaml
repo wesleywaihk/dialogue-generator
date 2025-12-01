@@ -1,27 +1,40 @@
-{
-    "language_code": "en-US",
-    "speakers": [
-        {
-            "name": "Sarah",
-            "voice_hint": "Female"
-        },
-        {
-            "name": "Michael",
-            "voice_hint": "Male"
-        }
-    ],
-    "dialogue": [
-        {
-            "speaker": "Sarah",
-            "text": "I think we should launch the new product line next quarter."
-        },
-        {
-            "speaker": "Michael",
-            "text": "That sounds feasible, Sarah. Do we have all the marketing materials prepared?"
-        },
-        {
-            "speaker": "Sarah",
-            "text": "Not yet. I'm waiting for the final design approval from the creative team."
-        }
-    ]
-}
+openapi: 3.0.0
+info:
+  title: Dialogue TTS Data Schema
+  version: 1.0.0
+  description: 用於 Web Speech API 文本轉語音 (TTS) 的對話資料結構。
+
+components:
+  schemas:
+    DialogueLine:
+      type: object
+      required:
+        - speaker
+        - text
+      properties:
+        speaker:
+          type: string
+          description: 發言人的名字或角色。 (用於嘗試匹配特定聲音)
+          example: "Alice"
+        text:
+          type: string
+          description: 要被朗讀的對話內容。
+          example: "Hello, how are you today?"
+
+    DialogueData:
+      type: object
+      required:
+        - language_code
+        - dialogue
+      properties:
+        language_code:
+          type: string
+          description: 整個對話使用的 BCP 47 語言標籤 (例如：zh-TW, en-US, ja-JP)。
+          example: "en-US"
+        dialogue:
+          type: array
+          description: 依序排列的對話行。
+          items:
+            $ref: "#/components/schemas/DialogueLine"
+
+paths: {} # 由於這是一個資料結構而非 API，paths 留空
