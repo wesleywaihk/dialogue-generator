@@ -15,11 +15,11 @@ components:
         speaker:
           type: string
           description: 發言人的名字或角色。 (用於嘗試匹配特定聲音)
-          example: 'Alice'
+          example: "Alice"
         text:
           type: string
           description: 要被朗讀的對話內容。
-          example: 'Hello, how are you today?'
+          example: "Hello, how are you today?"
 
     DialogueData:
       type: object
@@ -30,11 +30,11 @@ components:
         language_code:
           type: string
           description: 整個對話使用的 BCP 47 語言標籤 (例如：zh-TW, en-US, ja-JP)。
-          example: 'en-US'
+          example: "en-US"
         dialogue:
           type: array
           description: 依序排列的對話行。
           items:
-            $ref: '#/components/schemas/DialogueLine'
+            $ref: "#/components/schemas/DialogueLine"
 
 paths: {} # 由於這是一個資料結構而非 API，paths 留空
