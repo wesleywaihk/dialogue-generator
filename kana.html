@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>五十音聽力練習器 - 最終版</title>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --secondary: #10b981;
+        --bg: #f8fafc;
+      }
+      body {
+        font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: var(--bg);
+        color: #1e293b;
+      }
+      .container {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 420px;
+      }
+      .settings {
+        background: #f1f5f9;
+        padding: 15px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      .setting-item {
+        margin-bottom: 12px;
+      }
+      label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        display: flex;
+        justify-content: space-between;
+      }
+      select,
+      input[type="range"] {
+        width: 100%;
+        margin-top: 5px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        box-sizing: border-box;
+        font-size: 13px;
+      }
+      #display {
+        font-size: 60px;
+        font-weight: bold;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #e2e8f0;
+        margin: 10px 0;
+        background: #fafafa;
+        border-radius: 12px;
+      }
+      #statusText {
+        font-size: 16px;
+        color: #94a3b8;
+        height: 24px;
+        margin-bottom: 10px;
+      }
+      .button-group {
+        display: flex;
+        gap: 12px;
+      }
+      #drawBtn {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        flex: 3;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      }
+      #replayBtn {
+        background-color: var(--secondary);
+        color: white;
+        border: none;
+        padding: 20px;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        flex: 1;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      button:active {
+        transform: scale(0.96);
+      }
+      .kb-hint {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #94a3b8;
+        line-height: 1.6;
+      }
+      kbd {
+        background: #eee;
+        padding: 2px 4px;
+        border-radius: 4px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="settings">
+        <div class="setting-item">
+          <label>語音角色:</label>
+          <select id="voiceSelect">
+            <option>載入語音中...</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label>揭曉延遲: <span id="delayVal">4.0</span> 秒</label>
+          <input
+            type="range"
+            id="delayInput"
+            min="0.5"
+            max="10"
+            step="0.5"
+            value="4"
+          />
+        </div>
+
+        <div class="setting-item">
+          <label>語速 (Rate): <span id="rateVal">0.75</span></label>
+          <input
+            type="range"
+            id="rateInput"
+            min="0.5"
+            max="1.5"
+            step="0.05"
+            value="0.75"
+          />
+        </div>
+      </div>
+
+      <div id="statusText">準備就緒</div>
+      <div id="display">?</div>
+
+      <div class="button-group">
+        <button id="drawBtn">抽出發音 (Space)</button>
+        <button id="replayBtn" title="重聽一次 (V)">🔊</button>
+      </div>
+
+      <div class="kb-hint">
+        按 <kbd>Space</kbd> 抽新題目｜按 <kbd>V</kbd> 重聽發音
+      </div>
+    </div>
+
+    <script>
+      const correctBasic = [
+        ["あ", "ア"],
+        ["い", "イ"],
+        ["う", "ウ"],
+        ["え", "エ"],
+        ["お", "オ"],
+        ["か", "カ"],
+        ["き", "キ"],
+        ["く", "ク"],
+        ["け", "ケ"],
+        ["こ", "コ"],
+        ["さ", "サ"],
+        ["し", "シ"],
+        ["す", "ス"],
+        ["せ", "セ"],
+        ["そ", "ソ"],
+        ["た", "タ"],
+        ["ち", "チ"],
+        ["つ", "ツ"],
+        ["て", "テ"],
+        ["と", "ト"],
+        ["な", "ナ"],
+        ["に", "ニ"],
+        ["ぬ", "ヌ"],
+        ["ね", "ネ"],
+        ["の", "ノ"],
+        ["は", "ハ"],
+        ["ひ", "ヒ"],
+        ["ふ", "フ"],
+        ["へ", "ヘ"],
+        ["ほ", "ホ"],
+        ["ま", "マ"],
+        ["み", "ミ"],
+        ["む", "ム"],
+        ["め", "メ"],
+        ["も", "モ"],
+        ["や", "ヤ"],
+        ["ゆ", "ユ"],
+        ["よ", "ヨ"],
+        ["ら", "ラ"],
+        ["り", "リ"],
+        ["る", "ル"],
+        ["れ", "レ"],
+        ["ろ", "ロ"],
+        ["わ", "ワ"],
+        ["を", "ヲ"],
+        ["ん", "ン"],
+        ["が", "ガ"],
+        ["ぎ", "ギ"],
+        ["ぐ", "グ"],
+        ["げ", "ゲ"],
+        ["ご", "ゴ"],
+        ["ざ", "ザ"],
+        ["じ", "ジ"],
+        ["ず", "ズ"],
+        ["ぜ", "ゼ"],
+        ["ぞ", "ゾ"],
+        ["だ", "ダ"],
+        ["ぢ", "ヂ"],
+        ["づ", "ヅ"],
+        ["で", "デ"],
+        ["ど", "ド"],
+        ["ば", "バ"],
+        ["び", "ビ"],
+        ["ぶ", "ブ"],
+        ["べ", "ベ"],
+        ["ぼ", "ボ"],
+        ["ぱ", "パ"],
+        ["ぴ", "ピ"],
+        ["ぷ", "プ"],
+        ["ぺ", "ペ"],
+        ["ぽ", "ポ"],
+      ];
+      const yoon = [
+        ["きゃ", "キャ"],
+        ["きゅ", "キュ"],
+        ["きょ", "キョ"],
+        ["しゃ", "シャ"],
+        ["しゅ", "シュ"],
+        ["しょ", "ショ"],
+        ["ちゃ", "チャ"],
+        ["ちゅ", "チュ"],
+        ["ちょ", "チョ"],
+        ["にゃ", "ニャ"],
+        ["にゅ", "ニュ"],
+        ["にょ", "ニョ"],
+        ["ひゃ", "ヒャ"],
+        ["ひゅ", "ヒュ"],
+        ["ひょ", "ヒョ"],
+        ["みゃ", "ミャ"],
+        ["みゅ", "ミュ"],
+        ["みょ", "ミョ"],
+        ["りゃ", "リャ"],
+        ["りゅ", "リュ"],
+        ["りょ", "リョ"],
+        ["ぎゃ", "ギャ"],
+        ["ぎゅ", "ギュ"],
+        ["ぎょ", "ギョ"],
+        ["じゃ", "ジャ"],
+        ["じゅ", "ジュ"],
+        ["じょ", "ジョ"],
+        ["びゃ", "ビャ"],
+        ["びゅ", "ビュ"],
+        ["びょ", "ビョ"],
+        ["ぴゃ", "ピャ"],
+        ["ぴゅ", "ピュ"],
+        ["ぴょ", "ピョ"],
+      ];
+      const chōon = [
+        ["かあ", "カー"],
+        ["きい", "キー"],
+        ["くう", "クー"],
+        ["けえ", "ケー"],
+        ["こう", "コー"],
+        ["さあ", "サー"],
+        ["しい", "シー"],
+        ["すう", "スー"],
+        ["せえ", "セー"],
+        ["そう", "ソー"],
+        ["ああ", "アー"],
+        ["いい", "イー"],
+        ["うう", "ウー"],
+        ["ええ", "エー"],
+        ["おう", "オー"],
+      ];
+
+      const allKana = [...correctBasic, ...yoon, ...chōon];
+      const voiceSelect = document.getElementById("voiceSelect");
+      const display = document.getElementById("display");
+      const statusText = document.getElementById("statusText");
+      const drawBtn = document.getElementById("drawBtn");
+      const replayBtn = document.getElementById("replayBtn");
+      const delayInput = document.getElementById("delayInput");
+      const delayVal = document.getElementById("delayVal");
+      const rateInput = document.getElementById("rateInput");
+      const rateVal = document.getElementById("rateVal");
+
+      let voices = [];
+      let timer = null;
+      let currentWord = "";
+
+      function loadVoices() {
+        voices = window.speechSynthesis.getVoices();
+        const jpVoices = voices.filter((v) => v.lang.includes("ja"));
+
+        voiceSelect.innerHTML = "";
+        if (jpVoices.length === 0) {
+          voiceSelect.innerHTML = "<option>找不到日文語音</option>";
+          return;
+        }
+
+        jpVoices.forEach((voice) => {
+          const option = document.createElement("option");
+          option.textContent = voice.name;
+          option.value = voice.name;
+          voiceSelect.appendChild(option);
+        });
+
+        // 核心修改：預設選擇清單中的最後一個
+        voiceSelect.selectedIndex = jpVoices.length - 1;
+      }
+
+      // 處理部分瀏覽器非同步加載語音的問題
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      loadVoices();
+
+      function speak(text) {
+        if (!text) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        const selectedVoice = voices.find((v) => v.name === voiceSelect.value);
+        if (selectedVoice) utter.voice = selectedVoice;
+        utter.lang = "ja-JP";
+        utter.rate = parseFloat(rateInput.value);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utter);
+      }
+
+      delayInput.oninput = () =>
+        (delayVal.innerText = parseFloat(delayInput.value).toFixed(1));
+      rateInput.oninput = () =>
+        (rateVal.innerText = parseFloat(rateInput.value).toFixed(2));
+
+      function draw() {
+        if (timer) clearTimeout(timer);
+        const pair = allKana[Math.floor(Math.random() * allKana.length)];
+        currentWord = pair[0];
+
+        display.innerText = "？";
+        display.style.color = "#e2e8f0";
+        statusText.innerText = "聽音辨識中...";
+
+        speak(currentWord);
+
+        timer = setTimeout(() => {
+          display.innerHTML = `<span style="color:#1e293b">${pair[0]}</span> <span style="font-size:30px; color:#cbd5e1; margin:0 10px;">/</span> <span style="color:#1e293b">${pair[1]}</span>`;
+          statusText.innerText = "答案揭曉";
+        }, parseFloat(delayInput.value) * 1000);
+      }
+
+      drawBtn.onclick = draw;
+      replayBtn.onclick = () => speak(currentWord);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+          e.preventDefault();
+          draw();
+        }
+        if (e.code === "KeyV") {
+          speak(currentWord);
+        }
+      });
+    </script>
+  </body>
+</html>
