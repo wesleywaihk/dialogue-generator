@@ -3,158 +3,197 @@
   "dialogue": [
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "本日はお越しいただき、ありがとうございます。面接を担当します、山田です。よろしくお願いいたします。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "本日はお時間をいただき、ありがとうございます。ワイメイサムと申します。よろしくお願いいたします。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "では、自己紹介をお願いします。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "香港出身のワイメイサムです。現在、京都に住んでいます。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "日本語学校に通っており、3月中旬に修了する予定です。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "日本に来てから、どれくらいですか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "約1年半になります。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "現在の在留資格を教えてください。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "家族滞在の在留資格を持っています。有効期間は3年間です。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "日本語能力試験は受験しましたか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "はい、N2に合格しています。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "日本に来る前は何をしていましたか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "香港でプログラマーとして働いていました。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "現在、アルバイトはしていますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "はい、旅館で清掃のアルバイトをしています。契約がもうすぐ終了する予定です。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "このラーメン店を志望した理由を教えてください。"
     },
     {
       "speaker": "応募者",
-      "text": "日本で生活する中で、いろいろな仕事を経験したいと考えました。"
+      "speaker-code": "speaker-b",
+      "text": "日本に住んでいるうちに、新しい仕事に挑戦したいと考えています。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "特に、接客の仕事に興味があります。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "お客様と話しながら、日本語力を伸ばしたいと思っています。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "将来はせい社員として働くことも目標にしています。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "接客の経験はありますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "まだありません。しかし、新しいことを覚えるのは得意です。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "一生懸命努力いたします。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "ラーメン店は忙しい時間が多いですが、大丈夫ですか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "はい、大丈夫です。忙しい環境でも落ち着いて行動するよう心がけています。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "体力に自信はありますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "はい、あります。現在の清掃の仕事でも体を動かしていますので、問題ありません。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "チームで働くことについてどう思いますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "とても大切だと思います。周りとよくコミュニケーションを取り、協力して働きたいです。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "勤務可能な曜日と時間を教えてください。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "週3日ほど勤務を希望しています。週末も勤務可能です。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "平日は何時から働けますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "4月以降は時間の制限がありません。フルタイムでも働くことが可能です。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "最後に質問はありますか？"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "はい、研修期間はどれくらいでしょうか。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "通常は1か月程度です。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "わかりました。ありがとうございます。"
     },
     {
       "speaker": "面接官",
+      "speaker-code": "speaker-a",
       "text": "結果は後日ご連絡いたします。本日はありがとうございました。"
     },
     {
       "speaker": "応募者",
+      "speaker-code": "speaker-b",
       "text": "本日は貴重なお時間をいただき、ありがとうございました。"
     }
   ]

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -34,6 +34,12 @@
         margin-right: 10px;
         color: #0056b3;
       }
+      .speaker.speaker-a {
+        color: #0056b3;
+      }
+      .speaker.speaker-b {
+        color: green;
+      }
       .current-speaking {
         background-color: #e6f7ff;
         border-left: 5px solid #007bff;
@@ -50,6 +56,19 @@
         padding: 10px 15px;
         margin-right: 10px;
         cursor: pointer;
+      }
+      .play-button {
+        padding: 5px 10px;
+        margin-right: 10px;
+        background-color: #e6f7ff;
+        color: #0056b3;
+        border: 1px solid #0056b3;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+      .play-button:hover {
+        background-color: #b3d9ff;
       }
       #log {
         margin-top: 20px;
@@ -70,6 +89,19 @@
       .download-links {
         margin-top: 15px;
         font-size: 0.95em;
+      }
+      #stopBtn-floading {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        font-size: 1.1em;
+        z-index: 1000;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+      }
+      #stopBtn-floading:hover {
+        opacity: 1;
       }
     </style>
   </head>
@@ -121,6 +153,7 @@
       <p>
         <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
         <button id="stopBtn" disabled>⏹️ Stop Reading</button>
+        <button id="stopBtn-floading" disabled>⏹️ Stop Reading</button>
       </p>
 
       <p>Click any line below to read it individually.</p>
@@ -213,6 +246,7 @@
       const rateValueSpan = document.getElementById("rateValue");
       const readAllBtn = document.getElementById("readAllBtn");
       const stopBtn = document.getElementById("stopBtn");
+      const stopBtnFloading = document.getElementById("stopBtn-floading");
       const logDiv = document.getElementById("log");
       const eraseDataBtn = document.getElementById("eraseDataBtn");
       const STORAGE_KEY = "ttsDialogueData";
@@ -257,7 +291,7 @@
         if (langVoices.length === 0) {
           logMessage(
             `Warning: No voices found for language code ${targetLang}. Using default browser voice.`,
-            true
+            true,
           );
           return;
         }
@@ -271,7 +305,7 @@
           const selectedVoice = langVoices[voiceIndex];
           speakerVoiceMap[speaker] = selectedVoice;
           logMessage(
-            `Mapped speaker **${speaker}** to voice: **${selectedVoice.name}**`
+            `Mapped speaker **${speaker}** to voice: **${selectedVoice.name}**`,
           );
         });
       }
@@ -290,7 +324,7 @@
         speakerName,
         lineElement,
         isAllMode = false,
-        callback = () => {}
+        callback = () => {},
       ) {
         if (!isAllMode && synth.speaking) {
           synth.cancel();
@@ -304,12 +338,12 @@
         if (voiceMatch) {
           utterance.voice = voiceMatch;
           logMessage(
-            `Using voice: ${voiceMatch.name} (${voiceMatch.lang}) for ${speakerName}`
+            `Using voice: ${voiceMatch.name} (${voiceMatch.lang}) for ${speakerName}`,
           );
         } else {
           utterance.lang = lang;
           logMessage(
-            `No specific voice found. Using default voice for language: ${lang}`
+            `No specific voice found. Using default voice for language: ${lang}`,
           );
         }
 
@@ -324,6 +358,7 @@
         }
 
         stopBtn.disabled = false;
+        stopBtnFloading.disabled = false;
 
         utterance.onend = () => {
           logMessage(`Speech ended: ${text.substring(0, 30)}...`);
@@ -332,6 +367,7 @@
               .querySelectorAll(".current-speaking")
               .forEach((el) => el.classList.remove("current-speaking"));
             stopBtn.disabled = true;
+            stopBtnFloading.disabled = true;
             readAllBtn.disabled = !dialogueData || false;
           }
           currentUtterance = null;
@@ -361,7 +397,7 @@
           dialogueData.language_code,
           line.speaker,
           lineElement,
-          false
+          false,
         );
       } // --- Read All Dialogue ---
 
@@ -388,6 +424,7 @@
           } // Reset state regardless of how it ended
           isReadingAll = false;
           stopBtn.disabled = true;
+          stopBtnFloading.disabled = true;
           readAllBtn.disabled = false;
           document
             .querySelectorAll(".current-speaking")
@@ -397,7 +434,7 @@
 
         const line = dialogueData.dialogue[dialogueIndex];
         const lineElement = document.querySelector(
-          `.dialogue-line[data-index="${dialogueIndex}"]`
+          `.dialogue-line[data-index="${dialogueIndex}"]`,
         );
 
         speak(
@@ -409,7 +446,7 @@
           () => {
             dialogueIndex++;
             readNextLine();
-          }
+          },
         );
       } // --- Stop Function ---
 
@@ -421,8 +458,57 @@
           .querySelectorAll(".current-speaking")
           .forEach((el) => el.classList.remove("current-speaking"));
         stopBtn.disabled = true;
+        stopBtnFloading.disabled = true;
         readAllBtn.disabled = !dialogueData || false;
         logMessage("Reading stopped by user.");
+      }
+
+      function playThisLineOnly(index) {
+        if (!dialogueData || index < 0 || index >= dialogueData.dialogue.length)
+          return;
+
+        // Stop any currently playing speech
+        if (synth.speaking) {
+          synth.cancel();
+        }
+        document
+          .querySelectorAll(".current-speaking")
+          .forEach((el) => el.classList.remove("current-speaking"));
+
+        // Play only this line
+        const line = dialogueData.dialogue[index];
+        const lineElement = document.querySelector(
+          `.dialogue-line[data-index="${index}"]`,
+        );
+        isReadingAll = false;
+        logMessage(`Playing line ${index + 1}...`);
+        speak(
+          line.text,
+          dialogueData.language_code,
+          line.speaker,
+          lineElement,
+          false,
+        );
+      }
+
+      function playFromLine(startIndex) {
+        if (
+          !dialogueData ||
+          startIndex < 0 ||
+          startIndex >= dialogueData.dialogue.length
+        )
+          return;
+
+        // Stop any currently playing speech
+        stopReading();
+        setTimeout(() => {
+          // Set the starting index and play
+          dialogueIndex = startIndex;
+          readAllBtn.disabled = true;
+          isReadingAll = true;
+          logMessage(`Starting playback from line ${startIndex + 1}...`);
+          readNextLine();
+        }, 100);
       } // --- Local Storage Functions ---
 
       function saveDataToLocalStorage(data) {
@@ -484,7 +570,7 @@
             const data = JSON.parse(e.target.result);
             if (!data.language_code || !Array.isArray(data.dialogue)) {
               throw new Error(
-                'Invalid JSON format: Missing "language_code" or "dialogue" array.'
+                'Invalid JSON format: Missing "language_code" or "dialogue" array.',
               );
             }
             dialogueData = data;
@@ -521,8 +607,42 @@
           const lineDiv = document.createElement("div");
           lineDiv.className = "dialogue-line";
           lineDiv.dataset.index = index;
-          lineDiv.innerHTML = `<span class="speaker">${line.speaker}:</span><span>${line.text}</span>`;
-          lineDiv.addEventListener("click", handleLineClick);
+          lineDiv.dataset.speaker = line.speaker;
+
+          const playThisBtn = document.createElement("button");
+          playThisBtn.className = "play-button";
+          playThisBtn.textContent = "▶️";
+          playThisBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playThisLineOnly(index);
+          });
+
+          const playFromLineBtn = document.createElement("button");
+          playFromLineBtn.className = "play-button";
+          playFromLineBtn.textContent = "▶️⬇️";
+          playFromLineBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playFromLine(index);
+          });
+
+          const contentSpan = document.createElement("span");
+          const speakerSpan = document.createElement("span");
+          speakerSpan.className = "speaker";
+          // Add speaker-specific class based on speaker-code attribute
+          if (line["speaker-code"]) {
+            speakerSpan.classList.add(line["speaker-code"]);
+          }
+          speakerSpan.textContent = line.speaker + ":";
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = line.text;
+
+          contentSpan.appendChild(speakerSpan);
+          contentSpan.appendChild(textSpan);
+
+          lineDiv.appendChild(playThisBtn);
+          lineDiv.appendChild(playFromLineBtn);
+          lineDiv.appendChild(contentSpan);
           dialogueContainer.appendChild(lineDiv);
         });
         logMessage("Dialogue content displayed.");
@@ -537,11 +657,13 @@
 
       readAllBtn.addEventListener("click", readAllDialogue);
       stopBtn.addEventListener("click", stopReading);
+      stopBtnFloading.addEventListener("click", stopReading);
       eraseDataBtn.addEventListener("click", eraseLocalStorageData); // Ensure initial state and attempt to restore data on load
 
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
         stopBtn.disabled = true;
+        stopBtnFloading.disabled = true;
         eraseDataBtn.disabled = true; // Attempt to restore data on page load
 
         if (!restoreDataFromLocalStorage()) {
