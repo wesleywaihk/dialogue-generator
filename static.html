@@ -157,7 +157,9 @@
       const rateSlider = document.getElementById("rateSlider");
       const rateValueSpan = document.getElementById("rateValue");
       const readAllBtn = document.getElementById("readAllBtn");
+      const readAllBtnBottom = document.getElementById("readAllBtn_bottom");
       const stopBtn = document.getElementById("stopBtn");
+      const stopBtnBottom = document.getElementById("stopBtn_bottom");
       const logDiv = document.getElementById("log");
 
       const STATIC_DATA_FILE = "static-data.json";
@@ -527,7 +529,6 @@
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
         readAllBtnBottom.disabled = true;
-        eadAllBtnBottom.disabled = true;
         stopBtn.disabled = true;
         stopBtnBottom.disabled = true;
         loadStaticData();
