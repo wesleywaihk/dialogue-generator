@@ -24,6 +24,10 @@
         padding: 10px;
         border-bottom: 1px dashed #eee;
         /* cursor: pointer; */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
       }
       .dialogue-line:hover {
         background-color: #f0f0f0;
@@ -38,6 +42,12 @@
       }
       .speaker.speaker-b {
         color: green;
+      }
+      .speaker.speaker-c {
+        color: purple;
+      }
+      .speaker.speaker-d {
+        color: rgb(183, 103, 0);
       }
       .current-speaking {
         background-color: #e6f7ff;
@@ -56,7 +66,7 @@
         margin-right: 10px;
         cursor: pointer;
       }
-      .play-button {
+      .line-button {
         padding: 5px 10px;
         margin-right: 10px;
         background-color: #e6f7ff;
@@ -66,7 +76,7 @@
         cursor: pointer;
         font-size: 0.9em;
       }
-      .play-button:hover {
+      .line-button:hover {
         background-color: #b3d9ff;
       }
       #log {
@@ -84,18 +94,10 @@
         border: 1px solid #ffeeba;
         border-radius: 5px;
       }
-      #stopBtn-floading {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        font-size: 1.1em;
-        z-index: 1000;
-        opacity: 0.5;
-        transition: opacity 0.3s ease;
-      }
-      #stopBtn-floading:hover {
-        opacity: 1;
+      .kana-text {
+        font-size: 0.8em;
+        color: #555;
+        display: block;
       }
     </style>
   </head>
@@ -129,7 +131,6 @@
       <p>
         <button id="readAllBtn" disabled>▶️ Read All Dialogue</button>
         <button id="stopBtn" disabled>⏹️ Stop Reading</button>
-        <button id="stopBtn-floading" disabled>⏹️ Stop Reading</button>
       </p>
 
       <p>Click any line below to read it individually.</p>
@@ -150,7 +151,6 @@
       const rateValueSpan = document.getElementById("rateValue");
       const readAllBtn = document.getElementById("readAllBtn");
       const stopBtn = document.getElementById("stopBtn");
-      const stopBtnFloading = document.getElementById("stopBtn-floading");
       const logDiv = document.getElementById("log");
 
       const STATIC_DATA_FILE = "static-data.json";
@@ -263,7 +263,6 @@
         }
 
         stopBtn.disabled = false;
-        stopBtnFloading.disabled = false;
 
         utterance.onend = () => {
           logMessage(`Speech ended: ${text.substring(0, 30)}...`); // Only proceed to the next line if in 'Read All' mode AND isReadingAll is still true
@@ -277,7 +276,6 @@
               .querySelectorAll(".current-speaking")
               .forEach((el) => el.classList.remove("current-speaking"));
             stopBtn.disabled = true;
-            stopBtnFloading.disabled = true;
             readAllBtn.disabled = !dialogueData || false;
             isReadingAll = false; // Ensure flag is reset after natural finish
           }
@@ -306,7 +304,6 @@
           } // Reset state regardless of how it ended
           isReadingAll = false;
           stopBtn.disabled = true;
-          stopBtnFloading.disabled = true;
           readAllBtn.disabled = !dialogueData || false;
           document
             .querySelectorAll(".current-speaking")
@@ -320,7 +317,7 @@
         );
 
         speak(
-          line.text,
+          line.kana ?? line.text,
           dialogueData.language_code,
           line.speaker,
           lineElement,
@@ -341,7 +338,6 @@
           .querySelectorAll(".current-speaking")
           .forEach((el) => el.classList.remove("current-speaking"));
         stopBtn.disabled = true;
-        stopBtnFloading.disabled = true;
         readAllBtn.disabled = !dialogueData || false;
         logMessage("Reading stopped by user.");
       }
@@ -366,7 +362,7 @@
         isReadingAll = false;
         logMessage(`Playing line ${index + 1}...`);
         speak(
-          line.text,
+          line.kana ?? line.text,
           dialogueData.language_code,
           line.speaker,
           lineElement,
@@ -399,30 +395,12 @@
         const langH3 = document.createElement("h3");
         langH3.textContent = `Language Code: ${data.language_code}`;
         dialogueContainer.appendChild(langH3);
-
         data.dialogue.forEach((line, index) => {
           const lineDiv = document.createElement("div");
           lineDiv.className = "dialogue-line";
           lineDiv.dataset.index = index;
           lineDiv.dataset.speaker = line.speaker;
 
-          const playThisBtn = document.createElement("button");
-          playThisBtn.className = "play-button";
-          playThisBtn.textContent = "▶️";
-          playThisBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            playThisLineOnly(index);
-          });
-
-          const playFromLineBtn = document.createElement("button");
-          playFromLineBtn.className = "play-button";
-          playFromLineBtn.textContent = "▶️⬇️";
-          playFromLineBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            playFromLine(index);
-          });
-
-          const contentSpan = document.createElement("span");
           const speakerSpan = document.createElement("span");
           speakerSpan.className = "speaker";
           // Add speaker-specific class based on speaker-code attribute
@@ -431,15 +409,53 @@
           }
           speakerSpan.textContent = line.speaker + ":";
 
+          const textDiv = document.createElement("div");
+          textDiv.className = "text-container";
+
           const textSpan = document.createElement("span");
           textSpan.textContent = line.text;
+          textDiv.appendChild(textSpan);
 
-          contentSpan.appendChild(speakerSpan);
-          contentSpan.appendChild(textSpan);
+          if (!!line.kana) {
+            const kanaSpan = document.createElement("span");
+            kanaSpan.className = "kana-text";
+            kanaSpan.textContent = line.kana;
+            textDiv.appendChild(kanaSpan);
+          }
 
-          lineDiv.appendChild(playThisBtn);
-          lineDiv.appendChild(playFromLineBtn);
-          lineDiv.appendChild(contentSpan);
+          const playThisBtn = document.createElement("button");
+          playThisBtn.className = "line-button";
+          playThisBtn.textContent = "▶️";
+          playThisBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playThisLineOnly(index);
+          });
+
+          const playFromLineBtn = document.createElement("button");
+          playFromLineBtn.className = "line-button";
+          playFromLineBtn.textContent = "▶️⬇️";
+          playFromLineBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playFromLine(index);
+          });
+          const stopBtn = document.createElement("button");
+          stopBtn.className = "line-button";
+          stopBtn.textContent = "⏹️";
+          stopBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            stopReading();
+          });
+
+          const btnContainer = document.createElement("div");
+          btnContainer.className = "button-container";
+          btnContainer.appendChild(playThisBtn);
+          btnContainer.appendChild(playFromLineBtn);
+          btnContainer.appendChild(stopBtn);
+
+          lineDiv.appendChild(speakerSpan);
+          lineDiv.appendChild(textDiv);
+          lineDiv.appendChild(btnContainer);
+
           dialogueContainer.appendChild(lineDiv);
         });
         logMessage("Dialogue content displayed.");
@@ -488,12 +504,10 @@
 
       readAllBtn.addEventListener("click", () => playFromLine(0));
       stopBtn.addEventListener("click", stopReading);
-      stopBtnFloading.addEventListener("click", stopReading);
 
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
         stopBtn.disabled = true;
-        stopBtnFloading.disabled = true;
         loadStaticData();
       });
     </script>

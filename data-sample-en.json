@@ -1,21 +1,25 @@
 {
-    "language_code": "en-US",
-    "dialogue": [
-        {
-            "speaker": "Sarah",
-            "text": "I think we should launch the new product line next quarter."
-        },
-        {
-            "speaker": "Michael",
-            "text": "That sounds feasible, Sarah. Do we have all the marketing materials prepared?"
-        },
-        {
-            "speaker": "Sarah",
-            "text": "Not yet. I'm waiting for the final design approval from the creative team."
-        },
-        {
-            "speaker": "Michael",
-            "text": "Okay. Let's schedule a follow-up meeting to finalize the timeline by Friday."
-        }
-    ]
+  "language_code": "en-US",
+  "dialogue": [
+    {
+      "speaker": "Sarah",
+      "speaker-code": "speaker-a",
+      "text": "I think we should launch the new product line next quarter."
+    },
+    {
+      "speaker": "Michael",
+      "speaker-code": "speaker-b",
+      "text": "That sounds feasible, Sarah. Do we have all the marketing materials prepared?"
+    },
+    {
+      "speaker": "Sarah",
+      "speaker-code": "speaker-a",
+      "text": "Not yet. I'm waiting for the final design approval from the creative team."
+    },
+    {
+      "speaker": "Michael",
+      "speaker-code": "speaker-b",
+      "text": "Okay. Let's schedule a follow-up meeting to finalize the timeline by Friday."
+    }
+  ]
 }
