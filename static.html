@@ -142,6 +142,13 @@
       <p>Loading dialogue content...</p>
     </div>
 
+    <div class="dialogue-controls">
+      <p>
+        <button id="readAllBtn_bottom" disabled>▶️ Read All Dialogue</button>
+        <button id="stopBtn_bottom" disabled>⏹️ Stop Reading</button>
+      </p>
+    </div>
+
     <div id="log"><strong>Message Log:</strong><br /></div>
 
     <script>
@@ -263,6 +270,7 @@
         }
 
         stopBtn.disabled = false;
+        stopBtnBottom.disabled = false;
 
         utterance.onend = () => {
           logMessage(`Speech ended: ${text.substring(0, 30)}...`); // Only proceed to the next line if in 'Read All' mode AND isReadingAll is still true
@@ -276,7 +284,9 @@
               .querySelectorAll(".current-speaking")
               .forEach((el) => el.classList.remove("current-speaking"));
             stopBtn.disabled = true;
+            stopBtnBottom.disabled = true;
             readAllBtn.disabled = !dialogueData || false;
+            readAllBtnBottom.disabled = !dialogueData || false;
             isReadingAll = false; // Ensure flag is reset after natural finish
           }
           currentUtterance = null;
@@ -304,7 +314,9 @@
           } // Reset state regardless of how it ended
           isReadingAll = false;
           stopBtn.disabled = true;
+          stopBtnBottom.disabled = true;
           readAllBtn.disabled = !dialogueData || false;
+          readAllBtnBottom.disabled = !dialogueData || false;
           document
             .querySelectorAll(".current-speaking")
             .forEach((el) => el.classList.remove("current-speaking"));
@@ -338,7 +350,9 @@
           .querySelectorAll(".current-speaking")
           .forEach((el) => el.classList.remove("current-speaking"));
         stopBtn.disabled = true;
+        stopBtnBottom.disabled = true;
         readAllBtn.disabled = !dialogueData || false;
+        readAllBtnBottom.disabled = !dialogueData || false;
         logMessage("Reading stopped by user.");
       }
 
@@ -383,6 +397,7 @@
         setTimeout(() => {
           dialogueIndex = startIndex;
           readAllBtn.disabled = true;
+          readAllBtnBottom.disabled = true;
           isReadingAll = true;
           logMessage(`Starting playback from line ${startIndex}...`);
           readNextLine();
@@ -487,10 +502,12 @@
           }
 
           readAllBtn.disabled = false;
+          readAllBtnBottom.disabled = false;
           logMessage(`${STATIC_DATA_FILE} loaded successfully (Cache Busted).`);
         } catch (err) {
           dialogueContainer.innerHTML = `<p style="color: red;">Error loading static data from <strong>${STATIC_DATA_FILE}</strong>. Please ensure the file exists in the same directory and follows the required schema. (Error: ${err.message})</p>`;
           readAllBtn.disabled = true;
+          readAllBtnBottom.disabled = true;
           logMessage(`Data Loading Error: ${err.message}`, true);
         }
       } // --- Event Listeners ---
@@ -503,11 +520,16 @@
       });
 
       readAllBtn.addEventListener("click", () => playFromLine(0));
+      readAllBtnBottom.addEventListener("click", () => playFromLine(0));
       stopBtn.addEventListener("click", stopReading);
+      stopBtnBottom.addEventListener("click", stopReading);
 
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
+        readAllBtnBottom.disabled = true;
+        eadAllBtnBottom.disabled = true;
         stopBtn.disabled = true;
+        stopBtnBottom.disabled = true;
         loadStaticData();
       });
     </script>

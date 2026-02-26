@@ -237,6 +237,13 @@
       </div>
     </div>
 
+    <div class="dialogue-controls">
+      <p>
+        <button id="readAllBtn_bottom" disabled>▶️ Read All Dialogue</button>
+        <button id="stopBtn_bottom" disabled>⏹️ Stop Reading</button>
+      </p>
+    </div>
+
     <div id="log"><strong>Message Log:</strong><br /></div>
 
     <script>
@@ -247,6 +254,8 @@
       const rateValueSpan = document.getElementById("rateValue");
       const readAllBtn = document.getElementById("readAllBtn");
       const stopBtn = document.getElementById("stopBtn");
+      const readAllBtnBottom = document.getElementById("readAllBtn_bottom");
+      const stopBtnBottom = document.getElementById("stopBtn_bottom");
       const logDiv = document.getElementById("log");
       const eraseDataBtn = document.getElementById("eraseDataBtn");
       const STORAGE_KEY = "ttsDialogueData";
@@ -358,6 +367,7 @@
         }
 
         stopBtn.disabled = false;
+        stopBtnBottom.disabled = false;
 
         utterance.onend = () => {
           logMessage(`Speech ended: ${text.substring(0, 30)}...`);
@@ -366,7 +376,9 @@
               .querySelectorAll(".current-speaking")
               .forEach((el) => el.classList.remove("current-speaking"));
             stopBtn.disabled = true;
+            stopBtnBottom.disabled = true;
             readAllBtn.disabled = !dialogueData || false;
+            readAllBtnBottom.disabled = !dialogueData || false;
           }
           currentUtterance = null;
           callback();
@@ -411,7 +423,9 @@
           } // Reset state regardless of how it ended
           isReadingAll = false;
           stopBtn.disabled = true;
+          stopBtnBottom.disabled = true;
           readAllBtn.disabled = false;
+          readAllBtnBottom.disabled = false;
           document
             .querySelectorAll(".current-speaking")
             .forEach((el) => el.classList.remove("current-speaking"));
@@ -444,7 +458,9 @@
           .querySelectorAll(".current-speaking")
           .forEach((el) => el.classList.remove("current-speaking"));
         stopBtn.disabled = true;
+        stopBtnBottom.disabled = true;
         readAllBtn.disabled = !dialogueData || false;
+        readAllBtnBottom.disabled = !dialogueData || false;
         logMessage("Reading stopped by user.");
       }
 
@@ -489,6 +505,7 @@
         setTimeout(() => {
           dialogueIndex = startIndex;
           readAllBtn.disabled = true;
+          readAllBtnBottom.disabled = true;
           isReadingAll = true;
           logMessage(`Starting playback from line ${startIndex}...`);
           readNextLine();
@@ -520,6 +537,7 @@
               }
 
               readAllBtn.disabled = false;
+              readAllBtnBottom.disabled = false;
               logMessage("Dialogue restored from local storage.");
               eraseDataBtn.disabled = false;
               return true;
@@ -540,6 +558,7 @@
           dialogueData = null;
           dialogueContainer.innerHTML = howToUseHtml;
           readAllBtn.disabled = true;
+          readAllBtnBottom.disabled = true;
           eraseDataBtn.disabled = true;
           synth.cancel();
           logMessage("Stored dialogue data erased successfully.");
@@ -567,12 +586,14 @@
             }
 
             readAllBtn.disabled = false;
+            readAllBtnBottom.disabled = false;
             logMessage("JSON file loaded successfully.");
 
             saveDataToLocalStorage(dialogueData);
           } catch (err) {
             dialogueContainer.innerHTML = `<p style="color: red;">JSON Parsing Error. Please ensure the file follows the specified schema.</p>${howToUseHtml}`;
             readAllBtn.disabled = true;
+            readAllBtnBottom.disabled = true;
             eraseDataBtn.disabled = localStorage.getItem(STORAGE_KEY)
               ? false
               : true;
@@ -663,12 +684,16 @@
       });
 
       readAllBtn.addEventListener("click", () => playFromLine(0));
+      readAllBtnBottom.addEventListener("click", () => playFromLine(0));
       stopBtn.addEventListener("click", stopReading);
+      stopBtnBottom.addEventListener("click", stopReading);
       eraseDataBtn.addEventListener("click", eraseLocalStorageData); // Ensure initial state and attempt to restore data on load
 
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
+        readAllBtnBottom.disabled = true;
         stopBtn.disabled = true;
+        stopBtnBottom.disabled = true;
         eraseDataBtn.disabled = true; // Attempt to restore data on page load
 
         if (!restoreDataFromLocalStorage()) {
